@@ -1,0 +1,39 @@
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name) { return request.cookies.get(name)?.value },
+        set(name, value, options) { response.cookies.set({ name, value, ...options }) },
+        remove(name, options) { response.cookies.set({ name, value: '', ...options }) },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+  const url = request.nextUrl.clone()
+
+  // 1. If NOT logged in and trying to access anything EXCEPT /auth
+  if (!user && !url.pathname.startsWith('/auth')) {
+    url.pathname = '/auth'
+    return NextResponse.redirect(url)
+  }
+
+  // 2. If LOGGED IN and trying to access /auth or the root /
+  if (user && (url.pathname.startsWith('/auth') || url.pathname === '/')) {
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  return response
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+}
