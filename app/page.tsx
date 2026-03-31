@@ -14,7 +14,7 @@ export default async function RootPage() {
 
   // Logic: If user exists, go to dashboard. Otherwise, go to auth.
   if (!user) {
-    redirect('/auth')
+    redirect('/login')
   } else {
     redirect('/dashboard')
   }

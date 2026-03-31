@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
@@ -9,9 +9,12 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name) { return request.cookies.get(name)?.value },
-        set(name, value, options) { response.cookies.set({ name, value, ...options }) },
-        remove(name, options) { response.cookies.set({ name, value: '', ...options }) },
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          response = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+        },
       },
     }
   )
@@ -19,21 +22,29 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const url = request.nextUrl.clone()
 
-  // 1. If NOT logged in and trying to access anything EXCEPT /auth
-  if (!user && !url.pathname.startsWith('/auth')) {
-    url.pathname = '/auth'
-    return NextResponse.redirect(url)
+  // --- EXCEPTIONS ---
+  // Allow the ESP32 and API calls to bypass the login check
+  if (url.pathname.startsWith('/api')) {
+    return response;
   }
 
-  // 2. If LOGGED IN and trying to access /auth or the root /
-  if (user && (url.pathname.startsWith('/auth') || url.pathname === '/')) {
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
+  // --- REDIRECT LOGIC ---
+
+  // 1. If NOT logged in: Only allow access to /login
+  if (!user && url.pathname !== '/login') {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // 2. If LOGGED IN: Don't let them go to /login or the root /
+  // Replace '/dashboard' with whatever your main page is (e.g., /dashboard)
+  if (user && (url.pathname === '/login' || url.pathname === '/')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return response
 }
 
 export const config = {
+  // Matches all routes except static files and images
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }
