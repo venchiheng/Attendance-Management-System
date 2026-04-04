@@ -5,6 +5,16 @@ import SearchBar from "@/app/components/SearchBar";
 import DateInput from "@/app/components/DateInput";
 import Selector from "@/app/components/Selector";
 import AttendanceSummary from "@/app/components/AttendanceSummary";
+import { Icon } from "@iconify/react";
+
+const columns = [
+  { label: "Employee", key: "employee" },
+  { label: "Date", key: "date" },
+  { label: "Check In", key: "checkIn" },
+  { label: "Check Out", key: "checkOut" },
+  { label: "Work Hours", key: "workHours" },
+  { label: "Status", key: "status" },
+];
 
 export default function AttendancePage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -56,6 +66,25 @@ export default function AttendancePage() {
   const totalLate = filteredLogs.filter((l) => l.status === "Late").length;
   const totalAbsent = filteredLogs.filter((l) => l.status === "Absent").length;
 
+  const handleExportCSV = () => {
+    if (!filteredLogs.length) return;
+
+    const csvHeaders = columns.map((col) => col.label).join(",");
+    const csvRows = filteredLogs.map((row: any) =>
+      columns.map((col) => `"${row[col.key] ?? ""}"`).join(",")
+    );
+
+    const csvString = [csvHeaders, ...csvRows].join("\n");
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `attendance_logs_${filterDate || "export"}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {/* Search and Filters Header */}
@@ -69,7 +98,7 @@ export default function AttendancePage() {
           <div className="w-48">
             <DateInput
               value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
+              onChange={(val) => setFilterDate(val)}
             />
           </div>
           <Selector
@@ -82,6 +111,16 @@ export default function AttendancePage() {
               { label: "Absent", value: "Absent" },
             ]}
           />
+          <button
+            onClick={handleExportCSV}
+            className="btn btn-md bg-green-500 text-white hover:bg-green-700 "
+          >
+            <Icon
+              icon="material-symbols:download-rounded"
+              className="w-5 h-5"
+            ></Icon>
+            Export CSV
+          </button>
         </div>
       </div>
 
@@ -111,14 +150,7 @@ export default function AttendancePage() {
 
       <InfoTable
         title="Attendance Logs"
-        columns={[
-          { label: "Employee", key: "employee" },
-          { label: "Date", key: "date" },
-          { label: "Check In", key: "checkIn" },
-          { label: "Check Out", key: "checkOut" },
-          { label: "Work Hours", key: "workHours" },
-          { label: "Status", key: "status" },
-        ]}
+        columns={columns}
         rows={filteredLogs}
       />
 

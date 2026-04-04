@@ -26,5 +26,5 @@ export async function logOut() {
 
   if (error) throw error
 
-  window.location.href = '/auth'
+  window.location.href = '/login'
 }

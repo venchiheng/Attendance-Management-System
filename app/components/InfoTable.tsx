@@ -36,7 +36,7 @@ const getStatusBadge = (status: string) => {
 
 const InfoTable = ({ title, columns, rows }: InfoTableProps) => {
   // 1. SETTINGS
-  const itemsPerPage = 20;
+  const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
 
   // 2. CALCULATIONS

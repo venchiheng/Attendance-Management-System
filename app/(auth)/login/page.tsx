@@ -8,7 +8,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null); // State for validation error
+  const [error, setError] = useState<string | null>(null); // State for validation error  
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +71,42 @@ export default function LoginPage() {
               required
             />
           </div>
+
+          {role === "admin" && (
+            <div>
+              <div className="form-control flex flex-col gap-2">
+                <span className="font-semibold text-sm text-gray-600">
+                  Create Password
+                </span>
+                <input
+                  type="password"
+                  placeholder="Enter your password"
+                  className={`input input-bordered w-full rounded-xl bg-white text-gray-800 transition-all ${
+                    error
+                      ? "border-red-500 focus:outline-red-500 bg-red-50"
+                      : "border-gray-300 focus:outline-blue-500"
+                  }`}
+              />
+            </div>
+
+            <div className="form-control flex flex-col gap-2">
+              <span className="font-semibold text-sm text-gray-600">
+                Password
+              </span>
+            <input
+              type="password"
+              placeholder="Enter your password"
+              className={`input input-bordered w-full rounded-xl bg-white text-gray-800 transition-all ${
+                error
+                  ? "border-red-500 focus:outline-red-500 bg-red-50"
+                  : "border-gray-300 focus:outline-blue-500"
+              }`}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          </div>
+        )}
 
           <div className="form-control flex flex-col gap-2">
             <span className="font-semibold text-sm text-gray-600">

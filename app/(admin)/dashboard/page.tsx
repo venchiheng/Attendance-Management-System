@@ -1,8 +1,7 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardSummary from "@/app/components/DashboardSummary";
 import InfoTable from "@/app/components/InfoTable";
-import { Icon } from "@iconify/react";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -12,7 +11,16 @@ export default function DashboardPage() {
     totalLate: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [requests, setRequests] = useState([]);
+  type Request = {
+    id: string;
+    name: string;
+    type: string;
+    period: string;
+    created_at: string;
+    status: string;
+  };
+
+  const [requests, setRequests] = useState<Request[]>([]);
 
   const fetchSummary = async () => {
     try {
@@ -30,12 +38,12 @@ export default function DashboardPage() {
 
   const fetchRequests = async () => {
     try {
-      const res = await fetch("/api/dashboard/requests");
+      const res = await fetch("/api/requests");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
       const formattedData = data.map((item: any) => ({
-        ...item
+        ...item,
       }));
       setRequests(formattedData);
     } catch (err) {
@@ -43,6 +51,28 @@ export default function DashboardPage() {
     }
   };
 
+  const updateRequestStatus = async (id: string, status: string) => {
+    try {
+      // Pure REST: The ID is in the URL path
+      const res = await fetch(`/api/requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }), // Only send the changes
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error);
+      }
+
+      // Update UI state
+      setRequests((prev) =>
+        prev.map((req) => (req.id === id ? { ...req, status } : req))
+      );
+    } catch (err) {
+      console.error("REST Update Error:", err);
+    }
+  };
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true);
@@ -98,18 +128,18 @@ export default function DashboardPage() {
               key: "type",
             },
             { label: "Period", key: "period" },
-            { label: "Submitted", key: "created_at" },
+            { label: "Submitted", key: "submitted" },
             {
               label: "Status",
               key: "status",
               render: (row) => (
                 <span
                   className={`badge badge-sm ${
-                    row.status === "approved"
+                    row.status === "Approved"
                       ? "badge-success"
-                      : row.status === "pending"
+                      : row.status === "Pending"
                       ? "badge-warning"
-                      : "badge-ghost"
+                      : "badge-error"
                   }`}
                 >
                   {row.status}
@@ -119,16 +149,34 @@ export default function DashboardPage() {
             {
               label: "Action",
               key: "action",
-              render: (row) => (
-                <div className="flex gap-2">
-                  <button className="btn btn-sm bg-green-500 text-white">
-                    Approve
-                  </button>
-                  <button className="btn btn-sm bg-red-600 text-white">
-                    Reject
-                  </button>
-                </div>
-              ),
+              render: (row: Request) => {
+                if (row.status !== "Pending") {
+                  return (
+                    <span className="text-xs text-gray-400 italic">
+                      Completed
+                    </span>
+                  );
+                }
+
+                return (
+                  <div className="flex gap-2">
+                    <button
+                      className="btn btn-xs btn-success"
+                      onClick={() => {
+                        updateRequestStatus(row.id, "approved");
+                      }}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      className="btn btn-xs btn-error text-white"
+                      onClick={() => updateRequestStatus(row.id, "rejected")}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                );
+              },
             },
           ]}
         />

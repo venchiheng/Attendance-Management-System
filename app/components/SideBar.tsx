@@ -50,10 +50,14 @@ export default function SideBar({ children }: { children: React.ReactNode }) {
       label: "Dashboard",
       icon: "hugeicons:dashboard-square-02",
     },
-    { href: "/employees", label: "Employees", icon: "mingcute:group-line" },
-    { href: "/organization", label: "Organization", icon: "fluent:building-32-regular" },
     { href: "/attendance", label: "Attendance", icon: "mage:clipboard-2" },
     { href: "/requests", label: "Requests", icon: "hugeicons:note-03" },
+    { href: "/employees", label: "Employees", icon: "mingcute:group-line" },
+    {
+      href: "/organization",
+      label: "Organization",
+      icon: "fluent:building-32-regular",
+    },
     { href: "/reports", label: "Reports", icon: "mynaui:chart-column-solid" },
     { href: "/settings", label: "Settings", icon: "lsicon:setting-outline" },
   ];

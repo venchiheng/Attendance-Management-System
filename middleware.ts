@@ -21,24 +21,34 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   const url = request.nextUrl.clone()
+  const role = user?.user_metadata?.role || 'employee'
 
-  // --- EXCEPTIONS ---
-  // Allow the ESP32 and API calls to bypass the login check
-  if (url.pathname.startsWith('/api')) {
-    return response;
-  }
+  // 1. PUBLIC ROUTES (Allow these to always pass)
+  const isAuthPage = url.pathname === '/login' || url.pathname === '/auth';
+  const isPublicApi = url.pathname === '/api/auth/login';
 
-  // --- REDIRECT LOGIC ---
+  if (isPublicApi) return response;
 
-  // 1. If NOT logged in: Only allow access to /login
-  if (!user && url.pathname !== '/login') {
+  // 2. UNAUTHENTICATED USERS
+  if (!user && !isAuthPage) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // 2. If LOGGED IN: Don't let them go to /login or the root /
-  // Replace '/dashboard' with whatever your main page is (e.g., /dashboard)
-  if (user && (url.pathname === '/login' || url.pathname === '/')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+  // 3. AUTHENTICATED USERS
+  if (user) {
+    // Prevent logged-in users from going back to login
+    if (isAuthPage) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    // ADMIN-ONLY ROUTE PROTECTION
+    const adminRoutes = ['/employees', '/organization', '/reports'];
+    const isTryingAdminRoute = adminRoutes.some(path => url.pathname.startsWith(path));
+
+    if (isTryingAdminRoute && role !== 'admin') {
+      // Redirect unauthorized employees to their specific dashboard
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
   }
 
   return response
