@@ -3,11 +3,18 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@iconify/react";
-import { logOut } from "@/actions/auth";
+// import { logOut } from "@/actions/auth";
 
-export default function SideBar({ children }: { children: React.ReactNode }) {
+export default function SideBar({
+  children,
+  user,
+}: {
+  children: React.ReactNode;
+  user?: { fullname: string | null; role: string | null; email: string | null };
+}) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -17,50 +24,87 @@ export default function SideBar({ children }: { children: React.ReactNode }) {
     if (!mounted) return "Dashboard";
     if (pathname === "/") return "Dashboard";
     const segment = pathname.split("/").pop();
+    if (!segment) return "Dashboard";
+
     return segment
-      ? segment.charAt(0).toUpperCase() + segment.slice(1)
-      : "Dashboard";
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   const getDescription = () => {
     if (!mounted) return "";
     switch (pathname) {
       case "/dashboard":
-        return "Welcome to your dashboard overview. Here's what's happening today.";
+        return "Welcome to your dashboard overview. Here's what's happening today";
       case "/employees":
         return "Manage your team members";
       case "/organization":
-        return "Manage your orgranization's structure.";
+        return "Manage your orgranization's structure";
       case "/attendance":
-        return "View and manage employee attendance records.";
+        return "View and manage employee attendance records";
       case "/requests":
-        return "Review and manage leave and remote work requests.";
+        return "Review and manage leave and remote work requests";
       case "/reports":
-        return "Monthly attendance summary and analytics.";
+        return "Monthly attendance summary and analytics";
       case "/settings":
         return "Manage system configurations and preferences";
+      case "/my-attendance":
+        return "View your attendance history and records";
+      case "/my-requests":
+        return "View and manage your submitted requests";
+      case "/submit-request":
+        return "Submit a new request for leave or remote work";
+      case "/profile":
+        return "Manage your personal information and credentials";
       default:
         return "";
     }
   };
 
-  const menuItems = [
-    {
-      href: "/dashboard",
-      label: "Dashboard",
-      icon: "hugeicons:dashboard-square-02",
-    },
+  const isAdmin = user?.role?.toLowerCase() === "admin";
+
+  const adminItems = [
+    { href: "/dashboard", label: "Dashboard", icon: "hugeicons:dashboard-square-02" },
     { href: "/attendance", label: "Attendance", icon: "mage:clipboard-2" },
     { href: "/requests", label: "Requests", icon: "hugeicons:note-03" },
     { href: "/employees", label: "Employees", icon: "mingcute:group-line" },
-    {
-      href: "/organization",
-      label: "Organization",
-      icon: "fluent:building-32-regular",
-    },
+    { href: "/organization", label: "Organization", icon: "fluent:building-32-regular" },
     { href: "/reports", label: "Reports", icon: "mynaui:chart-column-solid" },
     { href: "/settings", label: "Settings", icon: "lsicon:setting-outline" },
   ];
+
+  const employeeItems = [
+    { href: "/dashboard", label: "Dashboard", icon: "hugeicons:dashboard-square-02" },
+    { href: "/my-attendance", label: "My Attendance", icon: "mage:clipboard-2" },
+    { href: "/my-requests", label: "My Requests", icon: "hugeicons:note-03" },
+    { href: "/submit-request", label: "Submit Request", icon: "streamline:send-email" },
+    { href: "/profile", label: "Profile", icon: "mingcute:user-4-line" },
+  ];
+
+  const menuItems = isAdmin ? adminItems : employeeItems;
+
+  const logOut = async () => {
+    try {
+      // 1. Call your custom Logout API to clear cookies on the server
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        // 2. Clear any local storage if you're using it for UI states
+        localStorage.clear();
+
+        // 3. Force a full redirect to the login page
+        // Use window.location.href to ensure the Middleware re-evaluates the empty session
+        window.location.href = "/login";
+      } else {
+        console.error("Logout failed");
+      }
+    } catch (error) {
+      console.error("An error occurred during logout:", error);
+    }
+  };
 
   return (
     <div className="drawer lg:drawer-open">
@@ -110,7 +154,7 @@ export default function SideBar({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col min-h-full w-64 bg-base-100 text-base-content border-r border-base-200">
           <div className="p-6">
             <h1 className="text-2xl font-bold text-primary">neWwave</h1>
-            <p className="text-xs opacity-60">Admin Dashboard</p>
+            <p className="text-xs opacity-60">{isAdmin ? "Admin Dashboard" : "Employee Portal"}</p>
           </div>
 
           <ul className="menu menu-md px-4 gap-2 grow w-full">
@@ -142,19 +186,37 @@ export default function SideBar({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-3 p-2 rounded-lg bg-base-200">
               <div className="avatar placeholder flex items-center">
                 <div className="bg-primary text-primary-content flex items-center justify-center rounded-full w-10 h-10">
-                  <span className="text-xs">AD</span>
+                  <span className="text-xs">
+                    {user?.fullname
+                      ? user.fullname
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2)
+                      : "U"}
+                  </span>
                 </div>
               </div>
               <div className="text-sm">
-                <p className="font-bold">Admin User</p>
-                <p className="text-xs opacity-50">admin@newwave.com</p>
+                <p className="font-bold">{user?.fullname || "Guest User"}</p>
+                <p className="text-xs opacity-50">{user?.email || "No Email"}</p>
               </div>
             </div>
             <button
               className="btn btn-ghost btn-md w-full mt-2 text-error justify-start"
-              onClick={() => logOut()}
+              onClick={() => {
+                setIsLoggingOut(true);
+                logOut();
+              }}
+              disabled={isLoggingOut}
             >
-              <Icon icon="mdi:logout" /> Logout
+              {isLoggingOut ? (
+                <span className="loading loading-spinner loading-sm"></span>
+              ) : (
+                <Icon icon="mdi:logout" />
+              )}
+              {isLoggingOut ? "Logging out..." : "Logout"}
             </button>
           </div>
         </div>

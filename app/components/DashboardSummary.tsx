@@ -16,6 +16,7 @@ const DashboardSummary = ({ icon, title, value, variant }: Props) => {
     green: "bg-green-100 text-green-600",
     red: "bg-red-100 text-red-600",
     orange: "bg-orange-100 text-orange-600",
+    purple: "bg-purple-100 text-purple-600"
   };
 
   return (

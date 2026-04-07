@@ -17,6 +17,8 @@ export async function GET() {
         end_date,
         reason,
         reviewed_note,
+        reviewed_by,
+        reviewed_at,
         created_at,
         employees (
           full_name
@@ -39,12 +41,11 @@ export async function GET() {
     // 3. Transform the data for your InfoTable
     const formattedData = data.map((req: any) => ({
       id: req.id,
-      name: req.employees?.full_name || "Unknown Employee",
+      title: `${capitalizeFirstLetter(req.request_type)} Request`, // Added for search functionality in page.tsx
       type: capitalizeFirstLetter(req.request_type || "Unknown"),
       status: capitalizeFirstLetter(req.status),
-      period: req.start_date
-        ? `${req.start_date} to ${req.end_date || "?"}`
-        : "---",
+      start_date: req.start_date || "---",
+      end_date: req.end_date || "---",
       duration:
         req.start_date && req.end_date
           ? `${
@@ -55,9 +56,17 @@ export async function GET() {
               ) + 1
             } days`
           : "---",
-      submitted: new Date(req.created_at).toLocaleDateString(),
+      submitAt: new Date(req.created_at).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
       reason: req.reason || "No reason provided",
       note: req.reviewed_note || "",
+      reviewBy: req.reviewed_by || "",
+      reviewAt: req.reviewed_at
+        ? new Date(req.reviewed_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+        : "",
     }));
 
     return NextResponse.json(formattedData);

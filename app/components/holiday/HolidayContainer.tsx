@@ -21,6 +21,8 @@ export default function HolidayContainer() {
   const [holidays, setHolidays] = useState<any[]>([]); // State to store holidays
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [newHoliday, setNewHoliday] = useState<{
     holiday_name: string;
     holiday_date: string;
@@ -31,11 +33,26 @@ export default function HolidayContainer() {
     holiday_type: "Company",
   });
 
-  // 1. Group holidays by Month and Year
+  // 1. Filter holidays based on search query and type
+  const filteredHolidays = React.useMemo(() => {
+    return holidays.filter((holiday) => {
+      const matchesSearch = holiday.holiday_name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      
+      const matchesType = 
+        filterStatus === "all" || 
+        holiday.holiday_type === filterStatus;
+
+      return matchesSearch && matchesType;
+    });
+  }, [holidays, searchQuery, filterStatus]);
+
+  // 2. Group filtered holidays by Month and Year
   const groupedHolidays = React.useMemo(() => {
     const groups: { [key: string]: any[] } = {};
 
-    holidays.forEach((holiday) => {
+    filteredHolidays.forEach((holiday) => {
       const date = new Date(holiday.holiday_date);
       // Create a key like "November 2026"
       const monthYear = date.toLocaleString("en-US", {
@@ -50,7 +67,16 @@ export default function HolidayContainer() {
     });
 
     return groups;
-  }, [holidays]);
+  }, [filteredHolidays]);
+
+  // Calculate summary values based on the holidays state
+  const totalHolidays = holidays.length;
+  const publicHolidays = holidays.filter(
+    (h) => h.holiday_type === "Public"
+  ).length;
+  const companyHolidays = holidays.filter(
+    (h) => h.holiday_type === "Company"
+  ).length;
 
   // 1. Load holidays from Supabase on start
   useEffect(() => {
@@ -116,17 +142,17 @@ export default function HolidayContainer() {
         <div className="flex flex-row gap-4 pb-4">
           <AttendanceSummary
             title="Total Holidays"
-            value="200"
+            value={totalHolidays}
             colorClass="bg-blue-100 text-blue-500"
           ></AttendanceSummary>
           <AttendanceSummary
             title="Total Public Holidays"
-            value="200"
+            value={publicHolidays}
             colorClass="bg-purple-100 text-purple-500"
           ></AttendanceSummary>
           <AttendanceSummary
             title="Total Company Holidays"
-            value="200"
+            value={companyHolidays}
             colorClass="bg-orange-100 text-orange-500"
           ></AttendanceSummary>
         </div>
@@ -139,15 +165,19 @@ export default function HolidayContainer() {
           />
         )}
         <div className="mb-6 flex flex-row gap-4">
-          <SearchBar placeholder="Search holidays by name..."></SearchBar>
+          <SearchBar 
+            placeholder="Search holidays by name..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
           <Selector
             options={[
-              { label: "All Types", value: "all" },
-              { label: "Public", value: "public" },
-              { label: "Company", value: "company" },
+              { label: "Public Holidays", value: "Public" },
+              { label: "Company Holidays", value: "Company" },
             ]}
-            placeholder="Pick a type"
-            defaultValue="all"
+            placeholder="All Types"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
           />
         </div>
         <button

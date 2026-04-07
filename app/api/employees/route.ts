@@ -42,7 +42,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   const supabase = await createClient();
-  const { id, department, position, ...updates } = await request.json(); // Remove joined strings
+  const { id, department, position, ...updates } = await request.json();
   const { data, error } = await supabase.from("employees").update(updates).eq("id", id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json(data);

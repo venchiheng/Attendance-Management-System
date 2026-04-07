@@ -12,7 +12,6 @@ export default async function RootPage() {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Logic: If user exists, go to dashboard. Otherwise, go to auth.
   if (!user) {
     redirect('/login')
   } else {

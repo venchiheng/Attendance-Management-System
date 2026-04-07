@@ -50,10 +50,11 @@ const AddHolidayForm = ({ newHoliday, setNewHoliday, onSubmit, onCancel }: Props
               { label: "Public", value: "Public" },
               { label: "Company", value: "Company" },
             ]}
-            defaultValue={newHoliday.holiday_type}
+            value={newHoliday.holiday_type}
+            onChange={(e) => setNewHoliday({...newHoliday, holiday_type: e.target.value as "Public" | "Company"})}
             placeholder="Pick a type"
-          >
-          </Selector>
+            showDefaultOption={false}
+          />
         </div>
       </div>
 

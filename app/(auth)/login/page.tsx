@@ -8,28 +8,49 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null); // State for validation error  
+  const [error, setError] = useState<string | null>(null); 
 
-  const handleLogin = async (e: React.FormEvent) => {
+  interface LoginResponse {
+    user: {
+      role: string;
+      [key: string]: any;
+    };
+    [key: string]: any;
+  }
+
+  interface LoginError {
+    error: string;
+    [key: string]: any;
+  }
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setError(null); // Clear previous errors
+    setError(null);
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+        headers: { 'Content-Type': 'application/json' }
+      });
 
-    if (authError) {
-      // Handle specific invalid credentials error
-      setError(
-        authError.message === "Invalid login credentials"
-          ? "Invalid email or password. Please try again."
-          : authError.message
-      );
+      const result = await response.json();
+
+      if (response.ok) {
+        if (result.user.role === 'admin') {
+          window.location.href = '/dashboard';
+        } else {
+          window.location.href = '/my-attendance';
+        }
+      } else {
+        setError(result.error || "Invalid email or password.");
+        setLoading(false);
+      }
+    } catch (err) {
+      setError("A connection error occurred. Please try again.");
+    } finally {
       setLoading(false);
-    } else {
-      window.location.href = "/dashboard";
     }
   };
 
@@ -46,17 +67,17 @@ export default function LoginPage() {
         <div className="bg-white p-3 rounded-2xl mb-4 shadow-lg">
           <Icon icon={"line-md:security"} className="text-blue-700 w-10 h-10"></Icon>
         </div>
-        <h1 className="text-3xl font-bold">neWwave Admin</h1>
-        <p className="text-gray-300 opacity-80 mt-1">Dashboard Login</p>
+        <h1 className="text-3xl font-bold">neWwave</h1>
+        <p className="text-gray-300 opacity-80 mt-1">Attendance Management System</p>
       </div>
 
       <div className="bg-white rounded-3xl p-10 w-full max-w-md shadow-2xl">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Admin Access</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">Log into your account</h2>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="form-control flex flex-col gap-2">
             <span className="font-semibold text-sm text-gray-600">
-              Admin Email
+              Email
             </span>
             <input
               type="email"
@@ -71,42 +92,6 @@ export default function LoginPage() {
               required
             />
           </div>
-
-          {role === "admin" && (
-            <div>
-              <div className="form-control flex flex-col gap-2">
-                <span className="font-semibold text-sm text-gray-600">
-                  Create Password
-                </span>
-                <input
-                  type="password"
-                  placeholder="Enter your password"
-                  className={`input input-bordered w-full rounded-xl bg-white text-gray-800 transition-all ${
-                    error
-                      ? "border-red-500 focus:outline-red-500 bg-red-50"
-                      : "border-gray-300 focus:outline-blue-500"
-                  }`}
-              />
-            </div>
-
-            <div className="form-control flex flex-col gap-2">
-              <span className="font-semibold text-sm text-gray-600">
-                Password
-              </span>
-            <input
-              type="password"
-              placeholder="Enter your password"
-              className={`input input-bordered w-full rounded-xl bg-white text-gray-800 transition-all ${
-                error
-                  ? "border-red-500 focus:outline-red-500 bg-red-50"
-                  : "border-gray-300 focus:outline-blue-500"
-              }`}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          </div>
-        )}
 
           <div className="form-control flex flex-col gap-2">
             <span className="font-semibold text-sm text-gray-600">
@@ -145,7 +130,7 @@ export default function LoginPage() {
       </div>
 
       <footer className="mt-8 text-gray-400 text-xs opacity-70">
-        © 2026 newwave. All rights reserved.
+        © 2026 neWwave. All rights reserved.
       </footer>
     </div>
   );

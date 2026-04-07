@@ -11,6 +11,6 @@
   ],
   "typescript.tsdk": "./node_modules/typescript/lib",
   "[typescript]": {
-    "editor.defaultFormatter": "denoland.vscode-deno"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   }
 }
