@@ -9,8 +9,8 @@ type RequestData = {
   status: string;
   type: string;
   period: string;
-  duration: string;
-  submitted: string;
+  duration?: string;
+  submitAt: string;
   reason: string;
   note?: string;
   onStatusUpdate: () => void;
@@ -20,7 +20,7 @@ export default function RequestsPage() {
   const [requests, setRequests] = useState<RequestData[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("All");
-  const [mounted, setMounted] = useState(false); // Track if we are in the browser
+  const [mounted, setMounted] = useState(false);
 
   const fetchRequests = async () => {
     try {

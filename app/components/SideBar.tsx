@@ -54,8 +54,8 @@ export default function SideBar({
       case "/my-requests":
         return "View and manage your submitted requests";
       case "/submit-request":
-        return "Submit a new request for leave or remote work";
-      case "/profile":
+        return "Fill out the form below to submit your request";
+      case "/my-profile":
         return "Manage your personal information and credentials";
       default:
         return "";
@@ -79,7 +79,7 @@ export default function SideBar({
     { href: "/my-attendance", label: "My Attendance", icon: "mage:clipboard-2" },
     { href: "/my-requests", label: "My Requests", icon: "hugeicons:note-03" },
     { href: "/submit-request", label: "Submit Request", icon: "streamline:send-email" },
-    { href: "/profile", label: "Profile", icon: "mingcute:user-4-line" },
+    { href: "/my-profile", label: "Profile", icon: "mingcute:user-4-line" },
   ];
 
   const menuItems = isAdmin ? adminItems : employeeItems;

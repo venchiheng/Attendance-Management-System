@@ -11,7 +11,7 @@ interface RequestProps {
   type: RequestType;
   period: string;
   duration?: string;
-  submitted: string;
+  submitAt: string;
   reason?: string;
   status: RequestStatus;
   note?: string;
@@ -24,7 +24,7 @@ const RequestCard = ({
   type,
   period,
   duration,
-  submitted,
+  submitAt, 
   reason,
   status,
   note,
@@ -151,8 +151,8 @@ const RequestCard = ({
             )}
 
             <div className="flex justify-between text-sm">
-              <span className="text-black">Submitted</span>
-              <span className="text-gray-700 font-medium">{submitted}</span>
+              <span className="text-black">Submitted At</span>
+              <span className="text-gray-700 font-medium">{submitAt}</span>
             </div>
           </div>
 
@@ -237,8 +237,8 @@ const RequestCard = ({
               </p>
             </div>
             <div>
-              <p className="text-gray-400 font-bold uppercase text-[10px]">Submitted Date</p>
-              <p className="text-gray-700 font-medium">{submitted}</p>
+              <p className="text-gray-400 font-bold uppercase text-[10px]">submitAt Date</p>
+              <p className="text-gray-700 font-medium">{submitAt}</p>
             </div>
             <div>
               <p className="text-gray-400 font-bold uppercase text-[10px]">{type === "General" ? "Requested Date" : "Period"}</p>

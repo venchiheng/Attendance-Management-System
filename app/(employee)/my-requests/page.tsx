@@ -4,13 +4,14 @@ import AttendanceSummary from "@/app/components/AttendanceSummary";
 import SearchBar from "@/app/components/SearchBar";
 import Selector from "@/app/components/Selector";
 import React, { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import EmployeeRequestCard from "@/app/components/EmployeeRequestCard";
 
 type RequestData = {
   title: string;
   id: string;
   type: string;
-  status: "Pending" | "Approved" | "Rejected";
+  status: "Pending" | "Approved" | "Rejected" | "Cancelled";
   reason: string;
   start_date: string;
   end_date: string;
@@ -26,22 +27,23 @@ export default function MyRequestsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const router = useRouter();
+
+  const fetchRequests = async () => {
+    try {
+      const response = await fetch("/api/requests");
+      if (response.ok) {
+        const data = await response.json();
+        setRequests(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch requests:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const response = await fetch("/api/requests");
-        if (response.ok) {
-          const data = await response.json();
-          setRequests(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch requests:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRequests();
   }, []);
 
@@ -63,6 +65,7 @@ export default function MyRequestsPage() {
       pending: requests.filter(r => r.status === 'Pending').length,
       approved: requests.filter(r => r.status === 'Approved').length,
       rejected: requests.filter(r => r.status === 'Rejected').length,
+      cancelled: requests.filter(r => r.status === 'Cancelled').length,
     };
   }, [requests]);
 
@@ -72,7 +75,7 @@ export default function MyRequestsPage() {
         <AttendanceSummary
           title="Total Requests"
           value={stats.total}
-          colorClass="border-gray-200 text-gray-600"
+          colorClass="border-gray-200 text-blue-600"
         />
         <AttendanceSummary
           title="Pending"
@@ -88,6 +91,11 @@ export default function MyRequestsPage() {
           title="Rejected"
           value={stats.rejected}
           colorClass="border-gray-200 text-red-600"
+        />
+        <AttendanceSummary
+          title="Cancelled"
+          value={stats.cancelled}
+          colorClass="border-gray-200 text-gray-600"
         />
       </div>
 
@@ -120,19 +128,26 @@ export default function MyRequestsPage() {
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
           ></Selector>
-          <button className="btn w-fit bg-[#1A77F2] text-white hover:bg-[#1A77F2]/90">
+          <button 
+            className="btn w-fit bg-[#1A77F2] text-white hover:bg-[#1A77F2]/90" 
+            onClick={() => router.push("/submit-request")}
+          >
             + New Request
           </button>
         </div>
 
-        <div className="flex flex-col gap-4 min-h-[200px] pb-6">
+        <div className="flex flex-col gap-4 pb-6">
           {loading ? (
             <div className="flex justify-center py-10">
               <span className="loading loading-spinner loading-lg text-primary"></span>
             </div>
           ) : filteredRequests.length > 0 ? (
             filteredRequests.map((req) => (
-              <EmployeeRequestCard key={req.id} {...req} />
+              <EmployeeRequestCard 
+                key={req.id} 
+                {...req} 
+                onStatusUpdate={fetchRequests}
+              />
             ))
           ) : (
             <div className="text-center py-10 text-gray-400">No requests found.</div>

@@ -17,7 +17,47 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Update with the required "Review" fields
+    // 2. Fetch the existing request to check ownership
+    const { data: existingRequest, error: fetchError } = await supabase
+      .from("employee_requests")
+      .select("employee_id")
+      .eq("id", id)
+      .single();
+
+    if (fetchError || !existingRequest) {
+      return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    }
+
+    // 3. Ownership check: If the user is the requester (Employee)
+    const isOwner = existingRequest.employee_id === user.id;
+
+    if (isOwner) {
+      // Employees are restricted: only "cancel" is allowed
+      const normalizedStatus = status?.toLowerCase();
+      if (normalizedStatus !== "cancelled" && normalizedStatus !== "cancel") {
+        return NextResponse.json(
+          { error: "Employees are only permitted to cancel their own requests." },
+          { status: 403 }
+        );
+      }
+
+      const { error } = await supabase
+        .from("employee_requests")
+        .update({
+          status: "cancelled",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+
+      if (error) {
+        console.error("Database Error:", error.message);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ message: "Request successfully cancelled" });
+    }
+
+    // 4. Administrator logic: Update with the required "Review" fields
     const { error } = await supabase
       .from('employee_requests')
       .update({ 

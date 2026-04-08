@@ -3,7 +3,7 @@ import React from "react";
 type Props = {
   options: { label: string; value: string }[];
   placeholder: string;
-  value: string; // This is your state
+  value: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   showDefaultOption?: boolean;
 };
