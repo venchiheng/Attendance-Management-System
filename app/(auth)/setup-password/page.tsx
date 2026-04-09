@@ -15,35 +15,47 @@ export default function SetupPassword() {
   const supabase = createClient();
 
   useEffect(() => {
-    const checkSession = async () => {
-      // 1. Try to get the session normally
-      let { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      // 2. If no session is found, check if tokens are in the URL hash (Implicit Grant flow)
-      if (!session && typeof window !== 'undefined' && window.location.hash) {
-        const hash = window.location.hash.substring(1); // remove '#'
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get("access_token");
-        const refreshToken = params.get("refresh_token");
+  let isMounted = true; // Prevents double-processing in Strict Mode
 
-        if (accessToken && refreshToken) {
-          const { data, error: setSessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-          if (!setSessionError) session = data.session;
+  const checkSession = async () => {
+    // Check if session already exists
+    const { data: { session: existingSession } } = await supabase.auth.getSession();
+    if (existingSession) {
+      if (isMounted) setIsVerifying(false);
+      return;
+    }
+
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+
+      if (accessToken && refreshToken && isMounted) {
+        // Use setSession but catch the error specifically
+        const { error: setSessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (setSessionError) {
+          console.error("403 or Session Error:", setSessionError.message);
+          // If it's already logged in, we can ignore the error
+          const { data: { session: retrySession } } = await supabase.auth.getSession();
+          if (!retrySession) {
+             setError("Invitation link expired or already used.");
+          }
         }
       }
-      
-      if (sessionError || !session) {
-        setError("Your invitation link may be invalid or expired. Please check your email.");
-      }
-      
-      setIsVerifying(false);
-    };
+    }
+    
+    if (isMounted) setIsVerifying(false);
+  };
 
-    checkSession();
-  }, [supabase]);
+  checkSession();
+
+  return () => { isMounted = false; }; // Cleanup
+}, [supabase]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -63,6 +63,7 @@ export default function CreateEmployee({
       const result = await response.json();
 
       if (response.ok) {
+        console.log(formData);
         onSuccess();
         onClose();
       } else {

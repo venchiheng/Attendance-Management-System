@@ -49,6 +49,10 @@ export default function SideBar({
         return "Monthly attendance summary and analytics";
       case "/settings":
         return "Manage system configurations and preferences";
+      case "/my-dashboard":
+        return `Welcome back, ${
+          user?.fullname || "Guest User"
+        }!`;
       case "/my-attendance":
         return "View your attendance history and records";
       case "/my-requests":
@@ -56,7 +60,7 @@ export default function SideBar({
       case "/submit-request":
         return "Fill out the form below to submit your request";
       case "/my-profile":
-        return "Manage your personal information and credentials";
+        return "View your personal information";
       default:
         return "";
     }
@@ -65,20 +69,40 @@ export default function SideBar({
   const isAdmin = user?.role?.toLowerCase() === "admin";
 
   const adminItems = [
-    { href: "/dashboard", label: "Dashboard", icon: "hugeicons:dashboard-square-02" },
+    {
+      href: "/dashboard",
+      label: "Dashboard",
+      icon: "hugeicons:dashboard-square-02",
+    },
     { href: "/attendance", label: "Attendance", icon: "mage:clipboard-2" },
     { href: "/requests", label: "Requests", icon: "hugeicons:note-03" },
     { href: "/employees", label: "Employees", icon: "mingcute:group-line" },
-    { href: "/organization", label: "Organization", icon: "fluent:building-32-regular" },
+    {
+      href: "/organization",
+      label: "Organization",
+      icon: "fluent:building-32-regular",
+    },
     { href: "/reports", label: "Reports", icon: "mynaui:chart-column-solid" },
     { href: "/settings", label: "Settings", icon: "lsicon:setting-outline" },
   ];
 
   const employeeItems = [
-    { href: "/dashboard", label: "Dashboard", icon: "hugeicons:dashboard-square-02" },
-    { href: "/my-attendance", label: "My Attendance", icon: "mage:clipboard-2" },
+    {
+      href: "/my-dashboard",
+      label: "Dashboard",
+      icon: "hugeicons:dashboard-square-02",
+    },
+    {
+      href: "/my-attendance",
+      label: "My Attendance",
+      icon: "mage:clipboard-2",
+    },
     { href: "/my-requests", label: "My Requests", icon: "hugeicons:note-03" },
-    { href: "/submit-request", label: "Submit Request", icon: "streamline:send-email" },
+    {
+      href: "/submit-request",
+      label: "Submit Request",
+      icon: "streamline:send-email",
+    },
     { href: "/my-profile", label: "Profile", icon: "mingcute:user-4-line" },
   ];
 
@@ -142,7 +166,7 @@ export default function SideBar({
           <div className="flex-none px-4"></div>
         </nav>
 
-        <div className="p-6 flex-grow bg-base-200 overflow-auto">
+        <div className="p-6 bg-base-200 overflow-auto">
           {children}
         </div>
       </div>
@@ -154,7 +178,9 @@ export default function SideBar({
         <div className="flex flex-col min-h-full w-64 bg-base-100 text-base-content border-r border-base-200">
           <div className="p-6">
             <h1 className="text-2xl font-bold text-primary">neWwave</h1>
-            <p className="text-xs opacity-60">{isAdmin ? "Admin Dashboard" : "Employee Portal"}</p>
+            <p className="text-xs opacity-60">
+              {isAdmin ? "Admin Dashboard" : "Employee Portal"}
+            </p>
           </div>
 
           <ul className="menu menu-md px-4 gap-2 grow w-full">
@@ -200,7 +226,9 @@ export default function SideBar({
               </div>
               <div className="text-sm">
                 <p className="font-bold">{user?.fullname || "Guest User"}</p>
-                <p className="text-xs opacity-50">{user?.email || "No Email"}</p>
+                <p className="text-xs opacity-50">
+                  {user?.email || "No Email"}
+                </p>
               </div>
             </div>
             <button

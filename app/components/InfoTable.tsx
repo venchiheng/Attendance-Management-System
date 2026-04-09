@@ -19,8 +19,10 @@ const getStatusBadge = (status: string) => {
     present: "bg-green-200 text-green-700", //attendance log
     active: "bg-blue-200 text-blue-700", //employee status
     inactive: "bg-red-500 text-red-700", //attendance log
-    late: "bg-yellow-200 text-yellow-600", //attendance log
+    late: "bg-yellow-100 text-yellow-700", //attendance log
     absent: "bg-red-500 text-red-700", //employee status
+    "on leave": "bg-purple-100 text-purple-700", //attendance log
+    remote: "bg-blue-200 text-blue-700", //attendance log
   };
 
   const badgeColor = styles[statusLower] || "badge-ghost";

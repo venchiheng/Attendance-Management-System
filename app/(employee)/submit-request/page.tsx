@@ -314,7 +314,7 @@ export default function SubmitRequestPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-slate-800 transition-colors shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed"
+                className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-800 transition-colors shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? "Submitting..." : "Submit Request"}
               </button>
