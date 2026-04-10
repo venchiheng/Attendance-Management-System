@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           response = NextResponse.next({ request });
@@ -28,41 +28,56 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const url = request.nextUrl.clone();
+  const url = request.nextUrl; // No need to clone unless you're modifying it
   const role =
     user?.app_metadata?.role || user?.user_metadata?.role || "employee";
-  // 1. PUBLIC ROUTES (Allow these to always pass)
+
+  // Route Definitions
   const isAuthPage = url.pathname === "/login" || url.pathname === "/auth";
   const isSetupPage = url.pathname === "/setup-password";
-  const isPublicApi = url.pathname === "/api/auth/login";
-
+  const isPublicApi = url.pathname.startsWith("/api/auth");
   const isInvite =
-    url.hash.includes("type=invite") || request.url.includes("type=invite");
+    url.hash.includes("type=invite") ||
+    url.searchParams.get("type") === "invite";
 
+  // 1. Let Public APIs through
   if (isPublicApi) return response;
 
-  // 2. UNAUTHENTICATED USERS
-  if (!user && !isAuthPage && !isSetupPage) {
+  // 2. UNAUTHENTICATED Logic
+  if (!user) {
+    // Allow login, setup, or invite links
+    if (isAuthPage || isSetupPage || isInvite) {
+      return response;
+    }
+    // Everything else redirects to login
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // 3. AUTHENTICATED USERS
+  // 3. AUTHENTICATED Logic
   if (user) {
-    if (isSetupPage) return response;
-    // Prevent logged-in users from going back to login
+    // If they are on a "logged out" page (login/auth), send them to their dashboard
     if (isAuthPage && !isInvite) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      const dest = role === "admin" ? "/dashboard" : "/my-dashboard";
+      return NextResponse.redirect(new URL(dest, request.url));
     }
 
-    // ADMIN-ONLY ROUTE PROTECTION
-    const adminRoutes = ["/employees", "/organization", "/reports"];
+    // Role-Based Access Control (RBAC)
+    const adminRoutes = [
+      "/employees",
+      "/organization",
+      "/reports",
+      "/settings",
+      "/dashboard",
+      "/requests",
+      "/attendance",
+    ];
     const isTryingAdminRoute = adminRoutes.some((path) =>
       url.pathname.startsWith(path)
     );
 
+    // If an employee tries to access an admin route, send them to THEIR dashboard
     if (isTryingAdminRoute && role !== "admin") {
-      // Redirect unauthorized employees to their specific dashboard
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL("/oops-unauthorized", request.url));
     }
   }
 
@@ -70,7 +85,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Matches all routes except static files and images
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],

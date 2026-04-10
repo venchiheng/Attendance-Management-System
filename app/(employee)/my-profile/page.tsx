@@ -82,7 +82,7 @@ export default function MyProfilePage() {
               {employee.positions?.name || "No Position Assigned"}
             </p>
             <p className="text-sm text-gray-400 mt-1 font-medium">
-              Employee ID: {employee.employee_code}
+              Employee ID: {employee.employee_code || "---"} 
             </p>
           </div>
         </div>

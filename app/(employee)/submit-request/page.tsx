@@ -1,8 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import Selector from "@/app/components/Selector";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type RequestType = "leave" | "remote" | "emergency" | "general";
 
@@ -61,13 +61,20 @@ export default function SubmitRequestPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requestType, setRequestType] = useState<RequestType>("leave");
+  const searchParams = useSearchParams();
+
   const [formData, setFormData] = useState({
     leaveType: "",
     startDate: "",
     endDate: "",
     description: "",
   });
-
+  useEffect(() => {
+    const type = searchParams.get("type") as RequestType;
+    if (type && REQUEST_INFO[type]) {
+      setRequestType(type);
+    }
+  }, [searchParams]);
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -399,9 +406,7 @@ export default function SubmitRequestPage() {
         {/* Need Help */}
         <div className="bg-white rounded-xl border border-gray-100">
           <div className="bg-green-100 px-6 py-4 rounded-t-xl">
-            <h2 className="text-lg font-bold text-slate-900">
-              Need Help?
-            </h2>
+            <h2 className="text-lg font-bold text-slate-900">Need Help?</h2>
           </div>
           <div className="p-6 flex flex-col gap-3">
             <p className="text-sm text-gray-500">

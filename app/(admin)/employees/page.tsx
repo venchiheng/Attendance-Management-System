@@ -44,6 +44,11 @@ export default function Page() {
     setIsModalOpen(true);
   };
 
+  const handleView = (employee: any) => {
+    setSelectedEmployee(employee);
+    setIsModalOpen(true);
+  };
+
   const handleAddNew = () => {
     setSelectedEmployee(null);
     setIsModalOpen(true);
@@ -110,6 +115,12 @@ export default function Page() {
             key: "actions",
             render: (row) => (
               <div className="flex gap-2">
+                <button
+                  className="btn btn-sm btn-ghost text-gray-700"
+                  onClick={() => handleView(row)}
+                >
+                  <Icon icon={"solar:eye-linear"} className="w-4 h-4" />
+                </button>
                 <button
                   className="btn btn-sm btn-ghost text-blue-600"
                   onClick={() => handleEdit(row)}
