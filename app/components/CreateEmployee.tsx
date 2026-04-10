@@ -261,7 +261,7 @@ export default function CreateEmployee({
             Cancel
           </button>
           <button
-            className={`btn bg-[#1A77F2] hover:bg-blue-700 text-white border-none min-w-[120px]`}
+            className={`btn bg-[#1A77F2] hover:bg-blue-700 text-white border-none`}
             onClick={handleSave}
             disabled={loading}
           >
