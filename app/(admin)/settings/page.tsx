@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import NotificationContainer from "@/app/components/notification/NotificationContainer";
 import HolidayContainer from "@/app/components/holiday/HolidayContainer";
 type Props = {};

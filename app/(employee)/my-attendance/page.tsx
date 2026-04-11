@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import DashboardSummary from "@/app/components/DashboardSummary";
 import InfoTable from "@/app/components/InfoTable";
 import Selector from "@/app/components/Selector";

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import SearchBar from "@/app/components/SearchBar";
 import InfoTable from "@/app/components/InfoTable";
 import Selector from "@/app/components/Selector";

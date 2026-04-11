@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import DateInput from "@/app/components/DateInput";
 import ReportSummary from "@/app/components/ReportSummary";
 import AttendanceSummary from "@/app/components/AttendanceSummary";

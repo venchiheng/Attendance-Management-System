@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import DashboardSummary from "@/app/components/DashboardSummary";
 import InfoTable from "@/app/components/InfoTable";
 

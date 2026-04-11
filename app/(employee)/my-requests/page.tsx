@@ -3,7 +3,7 @@
 import AttendanceSummary from "@/app/components/AttendanceSummary";
 import SearchBar from "@/app/components/SearchBar";
 import Selector from "@/app/components/Selector";
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import EmployeeRequestCard from "@/app/components/EmployeeRequestCard";
 
