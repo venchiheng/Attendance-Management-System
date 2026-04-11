@@ -5,7 +5,7 @@ import {
   deleteHoliday,
   getHolidays,
   addManualHoliday,
-} from "@/app/api/holiday/route";
+} from "@/app/lib/actions/holiday";
 import { useState, useEffect } from "react";
 import HolidayCard from "./HolidayCard";
 import SettingCard from "../SettingCard";
