@@ -1,7 +1,7 @@
 import React from 'react'
 import { Icon } from '@iconify/react';
 
-type ColorVariant = 'blue' | 'green' | 'red' | 'orange';
+type ColorVariant = 'blue' | 'green' | 'red' | 'orange' | 'purple';
 
 type Props = {
     icon: string;
