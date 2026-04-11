@@ -2,76 +2,75 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  if (!supabaseUrl || !supabaseKey) {
+    console.error("Missing Supabase environment variables in middleware");
+    return NextResponse.next();
+  }
+
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  try {
+    const supabase = createServerClient(supabaseUrl, supabaseKey, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          // In Next.js 15, we need to ensure the request is updated 
-          // so subsequent middleware/routes see the new cookies
-          cookiesToSet.forEach(({ name, value, options }) =>
-            request.cookies.set(name, value)
-          );
-          
-          // Create the response base
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set(name, value);
+          });
+
           response = NextResponse.next({
             request: {
               headers: request.headers,
             },
           });
 
-          // Apply cookies to the actual response headers
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
         },
       },
+    });
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const pathname = request.nextUrl.pathname;
+    const role =
+      user?.app_metadata?.role || user?.user_metadata?.role || "employee";
+
+    const isAuthPage = pathname === "/login" || pathname === "/auth";
+    const isSetupPage = pathname === "/setup-password";
+    const isPublicApi = pathname.startsWith("/api/auth");
+
+    // URL fragments (#...) are not reliably available to middleware/server
+    const isInvite = request.nextUrl.searchParams.get("type") === "invite";
+
+    if (isPublicApi) return response;
+
+    if (!user) {
+      if (isAuthPage || isSetupPage || isInvite) {
+        return response;
+      }
+      return NextResponse.redirect(new URL("/login", request.url));
     }
-  );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const url = request.nextUrl;
-  const role =
-    user?.app_metadata?.role || user?.user_metadata?.role || "employee";
-
-  // Route Definitions
-  const isAuthPage = url.pathname === "/login" || url.pathname === "/auth";
-  const isSetupPage = url.pathname === "/setup-password";
-  const isPublicApi = url.pathname.startsWith("/api/auth");
-  const isInvite =
-    url.hash.includes("type=invite") ||
-    url.searchParams.get("type") === "invite";
-
-  // 1. Let Public APIs through
-  if (isPublicApi) return response;
-
-  // 2. UNAUTHENTICATED Logic
-  if (!user) {
-    // Allow login, setup, or invite links
-    if (isAuthPage || isSetupPage || isInvite) {
-      return response;
-    }
-    // Everything else redirects to login
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  // 3. AUTHENTICATED Logic
-  if (user) {
-    // If they are on a "logged out" page (login/auth), send them to their dashboard
     if (isAuthPage && !isInvite) {
       const dest = role === "admin" ? "/dashboard" : "/my-dashboard";
       return NextResponse.redirect(new URL(dest, request.url));
     }
 
-    // Role-Based Access Control (RBAC)
     const adminRoutes = [
       "/employees",
       "/organization",
@@ -81,21 +80,30 @@ export async function middleware(request: NextRequest) {
       "/requests",
       "/attendance",
     ];
+
     const isTryingAdminRoute = adminRoutes.some((path) =>
-      url.pathname.startsWith(path)
+      pathname.startsWith(path)
     );
 
-    // If an employee tries to access an admin route, send them to THEIR dashboard
     if (isTryingAdminRoute && role !== "admin") {
       return NextResponse.redirect(new URL("/oops-unauthorized", request.url));
     }
-  }
 
-  return response;
+    return response;
+  } catch (error) {
+    console.error("Middleware auth error:", error);
+
+    // Never crash middleware at the edge
+    return NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    });
+  }
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt|woff|woff2)$).*)",
   ],
 };
