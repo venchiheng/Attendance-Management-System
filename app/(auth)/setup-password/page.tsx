@@ -83,7 +83,7 @@ export default function SetupPassword() {
       setLoading(false);
     } else {
       // Success! Move to dashboard
-      router.push("/dashboard?message=Account set up successfully");
+      router.push("/my-dashboard?message=Account set up successfully");
     }
   };
 

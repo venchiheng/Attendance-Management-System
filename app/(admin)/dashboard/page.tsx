@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import DashboardSummary from "@/app/components/DashboardSummary";
 import InfoTable from "@/app/components/InfoTable";
 
@@ -16,7 +17,7 @@ export default function DashboardPage() {
     name: string;
     type: string;
     period: string;
-    created_at: string;
+    submitAt: string;
     status: string;
   };
 
@@ -128,18 +129,18 @@ export default function DashboardPage() {
               key: "type",
             },
             { label: "Period", key: "period" },
-            { label: "Submitted", key: "submitted" },
+            { label: "Submitted", key: "submitAt" },
             {
               label: "Status",
               key: "status",
               render: (row) => (
                 <span
-                  className={`badge badge-sm ${
+                  className={`py-1 px-2 text-xs font-medium rounded-full ${
                     row.status === "Approved"
-                      ? "badge-success"
+                      ? "bg-green-100 text-green-600 border border-green-300"
                       : row.status === "Pending"
-                      ? "badge-warning"
-                      : "badge-error"
+                      ? "bg-amber-100 text-amber-600 border border-amber-300"
+                      : "bg-red-100 text-red-600 border border-red-300"
                   }`}
                 >
                   {row.status}
@@ -161,7 +162,7 @@ export default function DashboardPage() {
                 return (
                   <div className="flex gap-2">
                     <button
-                      className="btn btn-xs btn-success"
+                      className="bg-green-500 text-white rounded-full px-4 py-1 font-semibold cursor-pointer hover:underline hover:bg-green-600"
                       onClick={() => {
                         updateRequestStatus(row.id, "approved");
                       }}
@@ -169,7 +170,7 @@ export default function DashboardPage() {
                       Approve
                     </button>
                     <button
-                      className="btn btn-xs btn-error text-white"
+                      className="bg-red-500 text-white rounded-full px-4 py-1 font-semibold cursor-pointer hover:underline hover:bg-red-600"
                       onClick={() => updateRequestStatus(row.id, "rejected")}
                     >
                       Reject

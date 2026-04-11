@@ -54,9 +54,9 @@ const EmployeeRequestCard = (props: Props) => {
     switch (normalizedType) {
       case "Emergency":
         return {
-          bg: "bg-red-50",
-          color: "text-red-500",
-          icon: "material-symbols:warning-outline-rounded",
+          bg: "bg-amber-50",
+          color: "text-amber-500",
+          icon: "mingcute:warning-line",
         };
       case "Leave":
         return {
@@ -66,8 +66,8 @@ const EmployeeRequestCard = (props: Props) => {
         };
       case "General":
         return {
-          bg: "bg-blue-50",
-          color: "text-blue-500",
+          bg: "bg-purple-50",
+          color: "text-purple-500",
           icon: "mynaui:box-solid",
         };
       case "Remote":

@@ -109,6 +109,8 @@ export default function AttendancePage() {
               { label: "Present", value: "Present" },
               { label: "Late", value: "Late" },
               { label: "Absent", value: "Absent" },
+              { label: "On leave", value: "On leave" },
+              { label: "Remote", value: "Remote" },
             ]}
           />
           <button

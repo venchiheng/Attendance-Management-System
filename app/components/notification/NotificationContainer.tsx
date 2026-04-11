@@ -2,9 +2,13 @@ import React from "react";
 import SettingCard from "../SettingCard";
 import NotificationCard from "./NotificationCard";
 
-type Props = {};
+type Props = {
+  employeeId?: string;
+  employeeEmail?: string;
+  telegramChatId?: string;
+};
 
-const NotificationContainer = (props: Props) => {
+const NotificationContainer = ({telegramChatId }: Props) => {
   return (
     <div>
       <SettingCard
@@ -16,32 +20,12 @@ const NotificationContainer = (props: Props) => {
         cardType="notification"
       >
         <div className="flex flex-col gap-4">
-          <div className="flex flex-row md:flex-row w-full gap-4">
             <NotificationCard
-              title="Check-in Reminder"
-              description="Notify when employee check in"
-            ></NotificationCard>
-            <NotificationCard
-              title="Check-out Reminder"
-              description="Notify when employee check out"
-            ></NotificationCard>
-          </div>
-          <div className="flex flex-row md:flex-row w-full gap-4">
-            <NotificationCard
-              title="Daily reports"
-              description="Recieve daily attendance reports"
-            ></NotificationCard>
-            <NotificationCard
-              title="Weekly reports"
-              description="Recieve daily attendance reports"
-            ></NotificationCard>
-          </div>
-          <div className="flex flex-row md:flex-row w-full gap-4">
-            <NotificationCard
-              title="Employee Absence"
-              description="Notify on employee absences"
-            ></NotificationCard>
-          </div>
+              key={telegramChatId || "empty"}
+              title="Connect with Telegram Bot"
+              description="Notify when employee send requests"
+              initialChatId={telegramChatId}
+            />
         </div>
       </SettingCard>
     </div>

@@ -11,7 +11,7 @@ type Props = {
   btnIcon?: string;
   btnText?: string;
   btnAction?: () => void;
-  cardType? : 'standard' | 'notification'
+  cardType?: "standard" | "notification";
 };
 
 function SettingCard({
@@ -24,12 +24,14 @@ function SettingCard({
   btnIcon,
   btnText,
   cardType,
-  btnAction
+  btnAction,
 }: Props) {
   return (
     <div className="rounded-2xl pb-8 bg-white shadow-sm border border-gray-100 mb-6">
       {/* HEADER */}
-      <div className={`flex flex-row gap-4 ${headerColor} items-center p-5 rounded-t-2xl`}>
+      <div
+        className={`flex flex-row gap-4 ${headerColor} items-center p-5 rounded-t-2xl`}
+      >
         <div className="flex flex-row gap-4 items-center flex-1">
           <Icon
             icon={icon}
@@ -43,7 +45,10 @@ function SettingCard({
 
         {/* CONDITIONAL BUTTON */}
         {btnText && (
-          <button className="btn btn-sm flex gap-2 items-center bg-blue-600 text-white px-4 py-2  rounded-lg" onClick={btnAction}>
+          <button
+            className="btn btn-sm flex gap-2 items-center bg-blue-600 text-white px-4 py-2  rounded-lg"
+            onClick={btnAction}
+          >
             {btnIcon && <Icon icon={btnIcon} className="w-4 h-4" />}
             {btnText}
           </button>
@@ -52,7 +57,7 @@ function SettingCard({
 
       <div className="p-8">{children}</div>
 
-      {cardType == 'notification' && (
+      {/* {cardType == 'notification' && (
       <div className="pr-8 flex justify-end">
         <button className="btn btn-sm rounded-lg shadow-none text-white bg-blue-600">
           <Icon icon={"mynaui:save"}></Icon>
@@ -60,7 +65,7 @@ function SettingCard({
         </button>
       </div>
       )
-}
+} */}
     </div>
   );
 }

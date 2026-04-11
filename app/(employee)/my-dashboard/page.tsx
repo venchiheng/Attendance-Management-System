@@ -241,21 +241,15 @@ export default function page({}: Props) {
               </div>
             ) : (
               <div className="bg-red-100 p-4 rounded-xl flex items-center gap-3 border border-red-200">
-                <div className="p-2 bg-red-200 rounded-full">
+                <div className="p-2 bg-red-100 rounded-full">
                   <Icon
                     icon="material-symbols:door-open"
-                    className="text-red-700 w-6 h-6"
+                    className="text-red-600 w-6 h-6"
                   />
                 </div>
-                <h3 className="font-bold text-red-800">
-                  Haven't checked in yet? Go now :D
+                <h3 className="font-semibold text-red-600">
+                  Haven't checked in yet? Do it now! :D
                 </h3>
-                <Link
-                  href="/attendance"
-                  className="ml-auto bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold"
-                >
-                  Check-in
-                </Link>
               </div>
             )}
           </div>

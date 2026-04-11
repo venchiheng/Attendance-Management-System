@@ -64,11 +64,7 @@ export async function GET() {
               ) + 1
             } days`
           : "---",
-      submitAt: new Date(req.created_at).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
+      submitAt: new Date(req.created_at).toISOString().split('T')[0],
       reason: req.reason || "No reason provided",
       note: req.reviewed_note || "",
       reviewBy: req.profiles?.fullname || "---",

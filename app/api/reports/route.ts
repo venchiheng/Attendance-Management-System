@@ -10,8 +10,16 @@ export async function GET(request: Request) {
     const supabase = await createClient();
 
     // Calculate start and end of month safely
+    const currentYear = Number(monthStr.split('-')[0]);
+    const currentMonth = Number(monthStr.split('-')[1]);
     const startDate = `${monthStr}-01`;
-    const endDate = new Date(Number(monthStr.split('-')[0]), Number(monthStr.split('-')[1]), 0)
+    const endDate = new Date(currentYear, currentMonth, 0)
+                    .toISOString().split('T')[0];
+
+    // Previous Month Range for Trend Calculation
+    const prevMonthObj = new Date(currentYear, currentMonth - 2, 1);
+    const prevStartDate = prevMonthObj.toISOString().split('T')[0].slice(0, 7) + "-01";
+    const prevEndDate = new Date(currentYear, currentMonth - 1, 0)
                     .toISOString().split('T')[0];
 
     // 1. Fetch All Employees
@@ -33,26 +41,48 @@ export async function GET(request: Request) {
       .eq('status', 'approved')
       .or(`start_date.gte.${startDate},end_date.lte.${endDate}`);
 
+    // 4. Fetch Previous Month Logs for Trend
+    const { data: prevLogs } = await supabase
+      .from('attendance_log')
+      .select('attendance_status')
+      .gte('attendance_date', prevStartDate)
+      .lte('attendance_date', prevEndDate);
+
     // --- AGGREGATION ---
-    const totalAttendance = attendanceLogs?.length || 0;
+    const totalAttendance = attendanceLogs?.filter(log => 
+      ['Present', 'Late'].includes(log.attendance_status)
+    ).length || 0;
     const totalWorkMinutes = attendanceLogs?.reduce((acc, curr) => acc + (curr.worked_minutes || 0), 0) || 0;
     const totalRemote = requests?.filter(r => r.request_type === 'remote').length || 0;
     const totalLeave = requests?.filter(r => ['leave', 'emergency'].includes(r.request_type)).length || 0;
+    const totalCompleteDays = attendanceLogs?.filter(log => (log.worked_minutes || 0) > 480).length || 0;
 
     // Fixed Incomplete Logic: Log exists but worked less than 8 hours (480 mins) 
-    const totalIncomplete = attendanceLogs?.filter(log => 
-      !log.check_out_time || (log.worked_minutes && log.worked_minutes < 480)
+    const totalIncomplete = attendanceLogs?.filter(log =>
+      ['Present', 'Late'].includes(log.attendance_status) && log.worked_minutes < 480
     ).length || 0;
+
+    // Calculate Current and Previous Month Averages
+    const avgAttendance = totalAttendance > 0 
+      ? Math.round((totalAttendance / (employees?.length || 1) / 22) * 100) 
+      : 0;
+
+    const prevAttendanceCount = prevLogs?.filter(log => 
+      ['Present', 'Late'].includes(log.attendance_status)
+    ).length || 0;
+    const prevAvgAttendance = prevAttendanceCount > 0 
+      ? Math.round((prevAttendanceCount / (employees?.length || 1) / 22) * 100) 
+      : 0;
 
     const tableData = employees?.map(emp => {
       const empLogs = attendanceLogs?.filter(log => log.employee_id === emp.id) || [];
       const empRequests = requests?.filter(req => req.employee_id === emp.id) || [];
 
-      const presentCount = empLogs.filter(l => l.attendance_status === 'Present' || l.attendance_status === 'Late').length;
+      const presentCount = empLogs.filter(l => (['Present', 'Late'].includes(l.attendance_status))).length;
       const remoteCount = empRequests.filter(r => r.request_type === 'remote').length;
       const leaveCount = empRequests.filter(r => ['leave', 'emergency'].includes(r.request_type)).length;
       
-      const incompleteCount = empLogs.filter(l => !l.check_out_time || (l.worked_minutes < 480)).length;
+      const incompleteCount = empLogs.filter(l => (['Present', 'Late'].includes(l.attendance_status)) && (l.worked_minutes < 480)).length;
       const empMinutes = empLogs.reduce((acc, curr) => acc + (curr.worked_minutes || 0), 0);
       const rate = Math.min(Math.round(((presentCount + remoteCount) / 22) * 100), 100);
 
@@ -70,10 +100,10 @@ export async function GET(request: Request) {
     return NextResponse.json({
       summary: {
         totalAttendance,
-        avgAttendance: totalAttendance > 0 ? Math.round((totalAttendance / (employees?.length || 1) / 22) * 100) : 0,
-        trend: -3,
+        avgAttendance,
+        trend: avgAttendance - prevAvgAttendance,
         totalWorkHours: `${Math.round(totalWorkMinutes / 60)}h`,
-        totalCompleteDays: attendanceLogs?.filter(l => l.attendance_status === 'Present' && l.check_out_time).length || 0,
+        totalCompleteDays,
         totalRemote,
         totalLeave,
         totalIncomplete

@@ -119,10 +119,10 @@ export default function MyRequestsPage() {
           ></Selector>
           <Selector
             options={[
-              { label: "All", value: "all" },
               { label: "Pending", value: "pending" },
               { label: "Approved", value: "approved" },
               { label: "Rejected", value: "rejected" },
+              { label: "Cancelled", value: "cancelled" },
             ]}
             placeholder="All Status"
             value={filterStatus}

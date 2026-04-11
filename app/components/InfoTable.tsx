@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 
 type Column = { label: string; key: string, render?: (row: any) => React.ReactNode };
 type InfoTableProps = {
@@ -20,7 +21,7 @@ const getStatusBadge = (status: string) => {
     active: "bg-blue-200 text-blue-700", //employee status
     inactive: "bg-red-500 text-red-700", //attendance log
     late: "bg-yellow-100 text-yellow-700", //attendance log
-    absent: "bg-red-500 text-red-700", //employee status
+    absent: "bg-red-100 text-red-700", //employee status
     "on leave": "bg-purple-100 text-purple-700", //attendance log
     remote: "bg-blue-200 text-blue-700", //attendance log
   };
@@ -37,6 +38,10 @@ const getStatusBadge = (status: string) => {
 };
 
 const InfoTable = ({ title, columns, rows }: InfoTableProps) => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const isDashboard = pathname === "/dashboard";
+
   // 1. SETTINGS
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -60,9 +65,19 @@ const InfoTable = ({ title, columns, rows }: InfoTableProps) => {
       {/* HEADER */}
       <div className="p-4 bg-base-200/50 border-b border-base-content/5 flex justify-between items-center">
         <h2 className="text-lg font-bold">{title}</h2>
-        <span className="text-xs font-medium opacity-60 bg-base-300 px-2 py-1 rounded-md">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium opacity-60 bg-base-300 px-2 py-1 rounded-md">
           {totalRows} Total Records
         </span>
+        { isDashboard && (<button 
+                      className="text-xs text-blue-600 hover:underline cursor-pointer"
+                      onClick={() => router.push("/requests")}
+                    >
+                      View All
+                    </button>) 
+        }
+        </div>
+        
       </div>
 
       <div className="overflow-x-auto">
@@ -77,7 +92,16 @@ const InfoTable = ({ title, columns, rows }: InfoTableProps) => {
             </tr>
           </thead>
           <tbody>
-            {currentRows.map((row, rowIndex) => (
+            {currentRows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="text-center py-10">
+                  <p className="text-gray-400 italic font-medium">
+                    No record found
+                  </p>
+                </td>
+              </tr>
+            ) : (
+              currentRows.map((row, rowIndex) => (
               <tr key={rowIndex} className="hover transition-colors">
                 {columns.map((col, colIndex) => (
                   <td key={colIndex}>
@@ -91,7 +115,8 @@ const InfoTable = ({ title, columns, rows }: InfoTableProps) => {
                   </td>
                 ))}
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>

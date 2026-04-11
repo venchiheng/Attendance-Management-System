@@ -7,7 +7,12 @@ export async function GET() {
   const [empRes, deptRes, posRes, shiftRes] = await Promise.all([
     supabase
       .from("employees")
-      .select(`*, department:departments(name), position:positions(name)`)
+      .select(`
+        *, 
+        department:departments(name), 
+        position:positions(name),
+        profile:user_id(role)
+      `) // Added profile:user_id(role) here
       .order("created_at", { ascending: false }),
     supabase.from("departments").select("id, name"),
     supabase.from("positions").select("id, name"),
@@ -20,6 +25,8 @@ export async function GET() {
     ...employee,
     department: employee.department?.name || "N/A",
     position: employee.position?.name || "N/A",
+    // Extract the role from the nested profile object
+    role: employee.profile?.role 
   }));
 
   return NextResponse.json({
@@ -42,9 +49,27 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   const supabase = await createClient();
-  const { id, department, position, ...updates } = await request.json();
-  const { data, error } = await supabase.from("employees").update(updates).eq("id", id).select().single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  const body = await request.json();
+
+  // 1. Destructure to SEPARATE database columns from "UI helper" fields
+  // We extract 'id' to use in .eq(), and 'role', 'department', 'position' 
+  // because they don't exist in the 'employees' table.
+  const { id, role, department, position, profile, ...validEmployeeData } = body;
+
+  if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
+
+  // 2. Update ONLY the valid columns
+  const { data, error } = await supabase
+    .from("employees")
+    .update(validEmployeeData) // validEmployeeData only contains actual columns
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
   return NextResponse.json(data);
 }
 

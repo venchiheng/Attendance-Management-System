@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const url = request.nextUrl; // No need to clone unless you're modifying it
+  const url = request.nextUrl;
   const role =
     user?.app_metadata?.role || user?.user_metadata?.role || "employee";
 

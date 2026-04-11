@@ -7,7 +7,8 @@ import CreateEmployee from "@/app/components/CreateEmployee";
 import { Icon } from "@iconify/react";
 
 export default function Page() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState<"add" | "edit" | "view">("add");
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState([]);
@@ -41,17 +42,20 @@ export default function Page() {
 
   const handleEdit = (employee: any) => {
     setSelectedEmployee(employee);
-    setIsModalOpen(true);
+    setModalMode("edit");
+    setShowModal(true);
   };
 
   const handleView = (employee: any) => {
     setSelectedEmployee(employee);
-    setIsModalOpen(true);
+    setModalMode("view");
+    setShowModal(true);
   };
 
   const handleAddNew = () => {
     setSelectedEmployee(null);
-    setIsModalOpen(true);
+    setModalMode("add");
+    setShowModal(true);
   };
 
   const handleDelete = async (row: any) => {
@@ -62,6 +66,42 @@ export default function Page() {
     if (res.ok) fetchEmployees();
   };
 
+  const handleToggleRole = async (row: any) => {
+    const isCurrentlyAdmin = row.role === "admin";
+    const newRole = isCurrentlyAdmin ? "employee" : "admin";
+    const actionText = isCurrentlyAdmin
+      ? "REVOKE admin access from"
+      : "GRANT admin access to";
+
+    // 1. Alert the admin to confirm
+    const confirmAction = confirm(
+      `Are you sure you want to ${actionText} ${row.full_name}?`
+    );
+
+    if (!confirmAction) return;
+
+    try {
+      const res = await fetch("/api/profiles", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: row.id,
+          role: newRole,
+        }),
+      });
+
+      if (res.ok) {
+        // 3. Refresh the list to show the new role
+        fetchEmployees();
+      } else {
+        const errorData = await res.json();
+        alert(`Error: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error("Failed to update role:", error);
+    }
+  };
+
   const filteredEmployees = employees.filter((emp: any) => {
     const matchesSearch =
       emp.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -69,7 +109,6 @@ export default function Page() {
       emp.position?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       emp.work_mode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       emp.employment_type?.toLowerCase().includes(searchQuery.toLowerCase());
-
 
     const matchesDept = filterDept === "all" || emp.department === filterDept;
 
@@ -108,13 +147,50 @@ export default function Page() {
           { label: "Position", key: "position" },
           { label: "Department", key: "department" },
           { label: "Join Date", key: "hire_date" },
-          { label: "Work Mode", key: "work_mode" },
-          { label: "Employment Type", key: "employment_type" },
+          {
+            label: "Work Mode",
+            key: "work_mode",
+            render: (row) =>
+              row.work_mode
+                ? row.work_mode
+                    .replace(/[-_]/g, " ")
+                    .replace(/\b\w/g, (l: string) => l.toUpperCase())
+                : "---",
+          },
+          {
+            label: "Employment Type",
+            key: "employment_type",
+            render: (row) =>
+              row.employment_type
+                ? row.employment_type
+                    .replace(/[-_]/g, " ")
+                    .replace(/\b\w/g, (l: string) => l.toUpperCase())
+                : "---",
+          },
           {
             label: "Actions",
             key: "actions",
             render: (row) => (
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
+                {/* Role Toggle Button */}
+                <button
+                  className={`btn btn-sm btn-ghost ${
+                    row.role === "admin" ? "text-orange-500" : "text-gray-400"
+                  }`}
+                  onClick={() => handleToggleRole(row)}
+                  title={row.role === "admin" ? "Revoke Admin" : "Make Admin"}
+                >
+                  <Icon
+                    icon={
+                      row.role === "admin"
+                        ? "solar:shield-check-bold"
+                        : "solar:shield-user-outline"
+                    }
+                    className="w-5 h-5"
+                  />
+                </button>
+
+                <div className="divider divider-horizontal mx-0 w-1"></div>
                 <button
                   className="btn btn-sm btn-ghost text-gray-700"
                   onClick={() => handleView(row)}
@@ -143,11 +219,12 @@ export default function Page() {
       {loading && <div className="text-center py-4">Loading employees...</div>}
 
       <CreateEmployee
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
         initialData={selectedEmployee}
         metadata={metadata}
         onSuccess={fetchEmployees}
+        mode={modalMode}
       />
     </div>
   );

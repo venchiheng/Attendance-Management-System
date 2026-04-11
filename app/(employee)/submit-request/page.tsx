@@ -308,14 +308,14 @@ export default function SubmitRequestPage() {
               </p>
             </div>
 
-            {/* Attachments */}
+            {/* Attachments
             <fieldset className="fieldset">
               <label className="block text-sm font-medium text-slate-700 mb-1.5">
                 Description <span className="text-red-500">*</span>
               </label>
               <input type="file" className="file-input" />
               <label className="label">Max size 2MB</label>
-            </fieldset>
+            </fieldset> */}
 
             <div className="pt-2">
               <button
@@ -414,15 +414,15 @@ export default function SubmitRequestPage() {
             </p>
             <div className="flex flex-col gap-1">
               <p className="text-sm font-semibold text-slate-800">
-                HR Department
+                Managing Director
               </p>
-              <p className="text-xs text-blue-600">hr@company.com</p>
+              <p className="text-xs text-blue-600">tobeinput@new-wave.io</p>
             </div>
             <div className="flex flex-col gap-1">
               <p className="text-sm font-semibold text-slate-800">
                 Support Team
               </p>
-              <p className="text-xs text-blue-600">support@company.com</p>
+              <p className="text-xs text-blue-600">tobeinput@new-wave.io</p>
             </div>
           </div>
         </div>

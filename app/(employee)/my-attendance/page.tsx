@@ -39,7 +39,9 @@ export default function MyAttendancePage() {
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
       const matchesMonth = log.date?.startsWith(selectedMonth);
-      const matchesStatus = filterStatus === "all" || log.status === filterStatus;
+      // Use case-insensitive comparison for the status filter
+      const matchesStatus = filterStatus === "all" || 
+        log.status?.toLowerCase() === filterStatus.toLowerCase();
       return matchesMonth && matchesStatus;
     });
   }, [logs, selectedMonth, filterStatus]);
@@ -47,11 +49,16 @@ export default function MyAttendancePage() {
   const stats = useMemo(() => {
     if (filteredLogs.length === 0) return { present: 0, leave: 0, avgHours: "0", rate: "0", incomplete: 0 };
 
-    const presentCount = filteredLogs.filter(l => ["Present", "Late"].includes(l.status)).length;
-    const leaveCount = filteredLogs.filter(l => l.status === "Leave").length;
-    const incompleteCount = filteredLogs.filter(l => !l.checkOut || (parseFloat(l.workHours) < 8)).length;
+    // Standardize status checks with .toLowerCase()
+    const presentLogs = filteredLogs.filter(l => ["present", "late"].includes(l.status?.toLowerCase()));
+    const presentCount = presentLogs.length;
+    const leaveCount = filteredLogs.filter(l => l.status?.toLowerCase() === "on leave").length;
     
-    const totalHours = filteredLogs.reduce((acc, curr) => acc + (parseFloat(curr.workHours) || 0), 0);
+    // Only count as incomplete if the user was actually present/late but worked < 8 hours
+    const incompleteCount = presentLogs.filter(l => !l.checkOut || (parseFloat(l.workHours) < 8)).length;
+    
+    // Calculate total hours only for "Present" or "Late" status
+    const totalHours = presentLogs.reduce((acc, curr) => acc + (parseFloat(curr.workHours) || 0), 0);
     
     const rate = Math.min(Math.round((presentCount / 22) * 100), 100);
     
@@ -59,7 +66,7 @@ export default function MyAttendancePage() {
       present: presentCount,
       leave: leaveCount,
       incomplete: incompleteCount,
-      avgHours: (totalHours / filteredLogs.length).toFixed(1),
+      avgHours: presentCount > 0 ? (totalHours / presentCount).toFixed(1) : "0",
       rate: rate.toString()
     };
   }, [filteredLogs]);
@@ -101,7 +108,7 @@ export default function MyAttendancePage() {
                 { label: "Present", value: "Present" },
                 { label: "Late", value: "Late" },
                 { label: "Absent", value: "Absent" },
-                { label: "Leave", value: "Leave" },
+                { label: "On Leave", value: "On Leave" },
               ]}
             />
           </div>
