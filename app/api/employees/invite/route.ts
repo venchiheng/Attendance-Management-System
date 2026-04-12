@@ -47,7 +47,7 @@ export async function POST(request: Request) {
         email: email,
         options: {
           data: { fullname: full_name, role: "employee" },
-          redirectTo: `http://localhost:3000/setup-password`,
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/setup-password`,
         },
       });
 
