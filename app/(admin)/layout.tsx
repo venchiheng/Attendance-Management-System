@@ -1,21 +1,10 @@
 import SideBar from "@/app/components/SideBar";
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@/app/lib/supabase/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies();
-
-  // 1. Initialize Supabase Server Client
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-      },
-    }
-  );
+  const supabase = await createClient();
 
   // 2. Get the authenticated user from the session
   const { data: { user }, error: authError } = await supabase.auth.getUser();
