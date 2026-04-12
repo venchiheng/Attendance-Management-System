@@ -17,7 +17,7 @@ export default async function RootPage() {
     }
   )
 
-  const {
+  const { 
     data: { user },
   } = await supabase.auth.getUser()
 
