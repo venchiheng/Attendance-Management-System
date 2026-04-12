@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import InfoTable from "@/app/components/InfoTable";
 import SearchBar from "@/app/components/SearchBar";
 import DateInput from "@/app/components/DateInput";
