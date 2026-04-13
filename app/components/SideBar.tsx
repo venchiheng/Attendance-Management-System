@@ -179,9 +179,9 @@ export default function SideBar({
       <div className="drawer-side z-50 bg-white">
         <label htmlFor="main-sidebar" className="drawer-overlay"></label>
 
-        <div className="flex flex-col min-h-full w-64 bg-base-100 text-base-content border-r border-base-200">
-          <div className="p-6">
-            <h1 className="text-2xl font-bold text-primary">neWwave</h1>
+        <div className="flex flex-col min-h-full w-64 bg-base-100 text-base-content order-r border-base-200">
+          <div className="p-6 flex flex-col items-center justify-center">
+            <img src="/newwave_logo.png" alt="logo" />
             <p className="text-xs opacity-60">
               {isAdmin ? "Admin Dashboard" : "Employee Portal"}
             </p>

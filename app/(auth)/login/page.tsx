@@ -8,7 +8,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null); 
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   interface LoginResponse {
     user: {
@@ -29,19 +30,19 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
         body: JSON.stringify({ email, password }),
-        headers: { 'Content-Type': 'application/json' }
+        headers: { "Content-Type": "application/json" },
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        if (result.user.role === 'admin') {
-          window.location.href = '/dashboard';
+        if (result.user.role === "admin") {
+          window.location.href = "/dashboard";
         } else {
-          window.location.href = '/my-attendance';
+          window.location.href = "/my-attendance";
         }
       } else {
         setError(result.error || "Invalid email or password.");
@@ -64,21 +65,20 @@ export default function LoginPage() {
       </div>
 
       <div className="flex flex-col items-center mb-8 text-center">
-        <div className="bg-white p-3 rounded-2xl mb-4 shadow-lg">
-          <Icon icon={"line-md:security"} className="text-blue-700 w-10 h-10"></Icon>
-        </div>
-        <h1 className="text-3xl font-bold">neWwave</h1>
-        <p className="text-gray-300 opacity-80 mt-1">Attendance Management System</p>
+        <img src="/newwave_logo_white.png" className="h-42" alt="logo" />
+        <p className="text-white text-lg mt-1">
+          Attendance Management System
+        </p>
       </div>
 
       <div className="bg-white rounded-3xl p-10 w-full max-w-md shadow-2xl">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Log into your account</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">
+          Log into your account
+        </h2>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="form-control flex flex-col gap-2">
-            <span className="font-semibold text-sm text-gray-600">
-              Email
-            </span>
+            <span className="font-semibold text-sm text-gray-600">Email</span>
             <input
               type="email"
               placeholder="Enter your email"
@@ -97,17 +97,29 @@ export default function LoginPage() {
             <span className="font-semibold text-sm text-gray-600">
               Password
             </span>
-            <input
-              type="password"
-              placeholder="Enter your password"
-              className={`input input-bordered w-full rounded-xl bg-white text-gray-800 transition-all ${
-                error
-                  ? "border-red-500 focus:outline-red-500 bg-red-50"
-                  : "border-gray-300 focus:outline-blue-500"
-              }`}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                className={`input input-bordered w-full rounded-xl bg-white text-gray-800 transition-all pr-12 ${
+                  error
+                    ? "border-red-500 focus:outline-red-500 bg-red-50"
+                    : "border-gray-300 focus:outline-blue-500"
+                }`}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                <Icon
+                  icon={showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"}
+                  className="w-5 h-5"
+                />
+              </button>
+            </div>
           </div>
 
           {/* 3. VALIDATION ERROR BOX (Matches your image example) */}
@@ -129,7 +141,7 @@ export default function LoginPage() {
         </form>
       </div>
 
-      <footer className="mt-8 text-gray-400 text-xs opacity-70">
+      <footer className="mt-8 text-white text-xs opacity-70">
         © 2026 neWwave. All rights reserved.
       </footer>
     </div>
