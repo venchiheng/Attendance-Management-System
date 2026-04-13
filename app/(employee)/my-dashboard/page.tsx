@@ -84,8 +84,8 @@ export default function page({}: Props) {
         
         {/* THIS WEEK STATUS */}
         <div className="flex flex-col bg-white rounded-2xl shadow-sm border border-gray-100">
-          <div className="bg-blue-100 p-4 md:p-6 rounded-t-2xl">
-            <h2 className="text-lg md:text-xl font-bold text-blue-900">
+          <div className="bg-blue-100 p-6 rounded-t-2xl">
+            <h2 className="text-xl font-bold">
               {new Date().toLocaleDateString("en-US", {
                 month: "long",
                 day: "numeric",
@@ -94,81 +94,143 @@ export default function page({}: Props) {
             </h2>
           </div>
 
-          <div className="p-4 md:p-6">
+          <div className="p-6">
             <p className="font-medium text-gray-500 mb-3">This Week's Status</p>
-            {/* Horizontal Scroll Wrapper for Mobile */}
-            <div className="flex flex-row gap-3 mb-6 overflow-x-auto pb-4 scrollbar-hide">
+            <div className="flex flex-row gap-3 mb-6 overflow-x-auto pb-2">
               {isBaseDateValid &&
                 weekDays.map((dayName, idx) => {
+                  // 1. Calculate the date for this specific slot (Mon, Tue, etc.)
                   const dateObj = new Date(baseDate);
                   dateObj.setDate(dateObj.getDate() + idx);
+
+                  // 2. Format to YYYY-MM-DD for local comparison (avoiding UTC shift)
                   const year = dateObj.getFullYear();
                   const month = String(dateObj.getMonth() + 1).padStart(2, "0");
                   const day = String(dateObj.getDate()).padStart(2, "0");
                   const dateStr = `${year}-${month}-${day}`;
+
+                  // 3. Find if a log exists for this specific day
                   const log = weeklyLogs?.find((l: any) => l.date === dateStr);
+
+                  // 4. Identify if this card is today
                   const todayStr = new Intl.DateTimeFormat("en-CA", {
                     timeZone: "Asia/Phnom_Penh",
                     year: "numeric",
                     month: "2-digit",
                     day: "2-digit",
                   }).format(new Date());
+
                   const isToday = todayStr === dateStr;
 
                   return (
                     <div
                       key={dayName}
-                      className={`min-w-[85px] md:min-w-0 flex-1 p-3 md:p-4 rounded-xl flex flex-col items-center gap-1 border-2 transition-all
-                        ${log ? "bg-blue-50 border-blue-500 shadow-sm" : "bg-white border-gray-100 opacity-60"} 
-                        ${isToday ? "ring-1 ring-green-500 border-green-500 bg-green-50 opacity-100" : ""}`}
+                      className={`p-4 w-fit flex rounded-xl min-w-24 flex-col items-center gap-1 border-2 transition-all
+                      ${
+                        log
+                          ? "bg-blue-50 border-blue-500 shadow-sm"
+                          : "bg-white border-gray-100 opacity-60"
+                      } 
+                      ${isToday ? "ring-1 ring-green-500 border-green-500 bg-green-50" : ""}`}
                     >
-                      <p className="text-sm font-bold text-gray-700">{dayName.slice(0, 3)}</p>
-                      <p className="text-[10px] text-gray-400 mb-1">
-                        {dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      <p className="text-sm font-bold text-gray-700">
+                        {dayName.slice(0, 3)}
                       </p>
+                      <p className="text-[10px] text-gray-400 mb-1">
+                        {dateObj.toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </p>
+
                       <div className="my-1">
                         {log ? (
-                          <div className={`${isToday ? "bg-green-500" : "bg-blue-500"} rounded-full p-1 shadow-sm`}>
-                            <Icon icon="prime:check-circle" className="text-white w-4 h-4 md:w-5 md:h-5" />
+                          /* If logged, background is green if today, otherwise blue */
+                          <div
+                            className={`${
+                              isToday ? "bg-green-500" : "bg-blue-500"
+                            } rounded-full p-1 shadow-sm transition-colors`}
+                          >
+                            <Icon
+                              icon="prime:check-circle"
+                              className="text-white w-5 h-5"
+                            />
                           </div>
                         ) : (
-                          <div className={`border-2 border-dashed rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center ${isToday ? "border-green-500" : "border-gray-200"}`}>
-                            <span className={`${isToday ? "text-green-500 font-bold" : "text-gray-300"} text-[10px]`}>—</span>
+                          /* If not logged, border and text are green if today, otherwise gray */
+                          <div
+                            className={`border-2 border-dashed rounded-full w-7 h-7 flex items-center justify-center transition-colors 
+                            ${
+                              isToday ? "border-green-500" : "border-gray-200"
+                            }`}
+                          >
+                            <span
+                              className={`${
+                                isToday
+                                  ? "text-green-500 font-bold"
+                                  : "text-gray-300"
+                              } text-[10px]`}
+                            >
+                              —
+                            </span>
                           </div>
                         )}
                       </div>
-                      <p className="text-[11px] md:text-xs font-bold mt-1 text-gray-800 text-center">
+
+                      <p className="text-xs font-bold mt-1 text-gray-800">
                         {log?.worked_minutes && log.worked_minutes > 0
-                          ? `${Math.floor(log.worked_minutes / 60)}h ${log.worked_minutes % 60}m`
+                          ? `${Math.floor(log.worked_minutes / 60)}h ${
+                              log.worked_minutes % 60
+                            }m`
+                          : log?.total_hours && log.total_hours !== "0"
+                          ? `${Math.floor(
+                              parseFloat(log.total_hours)
+                            )}h ${Math.round(
+                              (parseFloat(log.total_hours) % 1) * 60
+                            )}m`
                           : "—"}
+                      </p>
+
+                      <p className="text-[10px] text-gray-400 font-medium">
+                        {log?.check_in_time || "—"}
                       </p>
                     </div>
                   );
                 })}
             </div>
 
-            {/* Check-in Status Area */}
             {todayLog ? (
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1 p-4 bg-green-50 border border-green-200 rounded-xl flex flex-col gap-1">
-                  <div className="flex items-center gap-2 text-green-600">
+              <div className="flex flex-row gap-4">
+                <div className="flex-1 p-4 bg-green-100 border border-green-500 rounded-xl flex flex-col gap-1">
+                  <div className="flex items-center gap-2 text-green-500">
                     <Icon icon="mdi:clock-check-outline" className="w-5 h-5" />
                     <p className="text-sm font-medium">Check-in</p>
                   </div>
-                  <h2 className="text-xl md:text-2xl font-bold text-green-800">{todayLog.check_in_time}</h2>
+                  <h2 className="text-2xl font-bold">
+                    {todayLog.check_in_time}
+                  </h2>
                 </div>
-                <div className="flex-1 p-4 bg-amber-50 border border-amber-200 rounded-xl flex flex-col gap-1">
-                  <div className="flex items-center gap-2 text-amber-600">
+                <div className="flex-1 p-4 bg-yellow-50 border border-yellow-500 rounded-xl flex flex-col gap-1">
+                  <div className="flex items-center gap-2 text-yellow-500">
                     <Icon icon="mdi:clock-export-outline" className="w-5 h-5" />
                     <p className="text-sm font-medium">Check-out</p>
                   </div>
-                  <h2 className="text-xl md:text-2xl font-bold text-amber-800">{todayLog.check_out_time || "--:--"}</h2>
+                  <h2 className="text-2xl font-bold">
+                    {todayLog.check_out_time || "--:--"}
+                  </h2>
                 </div>
               </div>
             ) : (
-              <div className="bg-red-50 p-4 rounded-xl flex items-center gap-3 border border-red-100">
-                <Icon icon="material-symbols:door-open" className="text-red-600 w-6 h-6 shrink-0" />
-                <h3 className="font-semibold text-red-600 text-sm md:text-base">Haven't checked in yet? Do it now! :D</h3>
+              <div className="bg-red-100 p-4 rounded-xl flex items-center gap-3 border border-red-200">
+                <div className="p-2 bg-red-100 rounded-full">
+                  <Icon
+                    icon="material-symbols:door-open"
+                    className="text-red-600 w-6 h-6"
+                  />
+                </div>
+                <h3 className="font-semibold text-red-600">
+                  Haven't checked in yet? Do it now! :D
+                </h3>
               </div>
             )}
           </div>
