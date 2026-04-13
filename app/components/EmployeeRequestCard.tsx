@@ -144,7 +144,7 @@ const EmployeeRequestCard = (props: Props) => {
 
       {/* Action Sidebar: Hidden on mobile status badge because we moved it above, 
           but Cancel button stays prominent */}
-      <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-fit gap-3 md:gap-4 border-t md:border-t-0 pt-3 md:pt-0">
+      <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-fit gap-3 md:gap-4 md:pt-0">
         <span
           className={`hidden md:block px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-wide ${getStatusConfig(
             props.status
