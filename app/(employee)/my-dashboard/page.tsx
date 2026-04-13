@@ -415,7 +415,7 @@ export default function page({}: Props) {
               <h3>{employee.department_name}</h3>
             </div>
             <Link
-              href="/profile"
+              href="/my-profile"
               className="mt-4 p-3 bg-blue-600 text-white rounded-xl text-center text-sm font-semibold hover:underline"
             >
               View Full Profile
