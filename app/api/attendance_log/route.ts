@@ -28,15 +28,19 @@ export async function GET() {
         employee: fullName,
         date: item.attendance_date,
         checkIn: item.check_in_time
-          ? new Date(item.check_in_time).toLocaleTimeString([], {
+          ? new Date(item.check_in_time).toLocaleTimeString("en-US", {
+              timeZone: "Asia/Phnom_Penh",
               hour: "2-digit",
               minute: "2-digit",
+              hour12: false,
             })
           : "---",
         checkOut: item.check_out_time
-          ? new Date(item.check_out_time).toLocaleTimeString([], {
+          ? new Date(item.check_out_time).toLocaleTimeString("en-US", {
+              timeZone: "Asia/Phnom_Penh",
               hour: "2-digit",
               minute: "2-digit",
+              hour12: false,
             })
           : "---",
         workHours:
