@@ -73,6 +73,7 @@ export default function DashboardPage() {
       console.error("REST Update Error:", err);
     }
   };
+  
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true);
@@ -135,9 +136,9 @@ export default function DashboardPage() {
               render: (row) => (
                 <span
                   className={`py-1 px-2 text-xs font-medium rounded-full ${
-                    row.status === "Approved"
+                    row.status === "Approved" || row.status === "approved"
                       ? "bg-green-100 text-green-600 border border-green-300"
-                      : row.status === "Pending"
+                      : row.status === "Pending" || row.status === "pending"
                       ? "bg-amber-100 text-amber-600 border border-amber-300"
                       : "bg-red-100 text-red-600 border border-red-300"
                   }`}
