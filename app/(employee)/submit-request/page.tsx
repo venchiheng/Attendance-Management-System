@@ -62,6 +62,7 @@ export default function SubmitRequestPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requestType, setRequestType] = useState<RequestType>("leave");
   const searchParams = useSearchParams();
+  const today = new Date().toISOString().split("T")[0];
 
   const [formData, setFormData] = useState({
     leaveType: "",
@@ -69,12 +70,14 @@ export default function SubmitRequestPage() {
     endDate: "",
     description: "",
   });
+
   useEffect(() => {
     const type = searchParams.get("type") as RequestType;
     if (type && REQUEST_INFO[type]) {
       setRequestType(type);
     }
   }, [searchParams]);
+
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -117,7 +120,7 @@ export default function SubmitRequestPage() {
     inactiveClass: string
   ) => {
     const isActive = requestType === type;
-    return `flex flex-col gap-2 p-4 justify-center items-center border rounded-xl cursor-pointer transition-all flex-1
+    return `flex flex-col gap-2 p-4 justify-center items-center border rounded-xl cursor-pointer transition-all w-full
       ${isActive ? activeClass : inactiveClass}`;
   };
 
@@ -127,16 +130,19 @@ export default function SubmitRequestPage() {
   const info = REQUEST_INFO[requestType];
 
   return (
-    <div className="flex flex-row gap-5">
+    /* Change 1: flex-col for mobile, flex-row for Desktop */
+    <div className="flex flex-col lg:flex-row gap-5 p-4 md:p-0">
       {/* Actual request form - left side */}
       <div className="flex flex-col w-full gap-6">
         {/* Select request type */}
-        <div className="bg-white rounded-lg p-6">
+        <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm border border-gray-100">
           <h2 className="text-xl font-semibold mb-1">Request Type</h2>
           <p className="text-sm text-gray-500">
             Select the type of request you want to submit
           </p>
-          <div className="flex flex-row gap-4 mt-4 ">
+
+          {/* Change 2: Grid for request types (2 columns on mobile/tablet, 4 on desktop) */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:flex lg:flex-row gap-3 md:gap-4 mt-4">
             <div
               className={getButtonStyles(
                 "leave",
@@ -155,6 +161,7 @@ export default function SubmitRequestPage() {
                 Request time off from work
               </span>
             </div>
+
             <div
               className={getButtonStyles(
                 "remote",
@@ -173,6 +180,7 @@ export default function SubmitRequestPage() {
                 Request to work from home
               </span>
             </div>
+
             <div
               className={getButtonStyles(
                 "emergency",
@@ -193,6 +201,7 @@ export default function SubmitRequestPage() {
                 Urgent situations requiring immediate time off
               </span>
             </div>
+
             <div
               className={getButtonStyles(
                 "general",
@@ -215,10 +224,10 @@ export default function SubmitRequestPage() {
             </div>
           </div>
         </div>
-        {/* Requets form */}
-        <div className="bg-white rounded-xl border border-gray-100">
-          {/* Header */}
-          <div className="p-6 border-b border-gray-200">
+
+        {/* Request form */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
+          <div className="p-4 md:p-6 border-b border-gray-200">
             <h2 className="text-xl font-bold text-slate-900">
               {requestType.charAt(0).toUpperCase() + requestType.slice(1)}{" "}
               Request Details
@@ -228,7 +237,7 @@ export default function SubmitRequestPage() {
             </p>
           </div>
 
-          <form className="p-6 space-y-6" onSubmit={handleSubmit}>
+          <form className="p-4 md:p-6 space-y-6" onSubmit={handleSubmit}>
             {showSelector && (
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
@@ -264,6 +273,8 @@ export default function SubmitRequestPage() {
                   <input
                     type="date"
                     name="startDate"
+                    // Prevents picking any date before today
+                    min={new Date().toISOString().split("T")[0]}
                     value={formData.startDate}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none"
@@ -279,6 +290,12 @@ export default function SubmitRequestPage() {
                   <input
                     type="date"
                     name="endDate"
+                    // Prevents picking an end date before the start date
+                    // If no start date is picked yet, it defaults to today
+                    min={
+                      formData.startDate ||
+                      new Date().toISOString().split("T")[0]
+                    }
                     value={formData.endDate}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none"
@@ -288,7 +305,6 @@ export default function SubmitRequestPage() {
               )}
             </div>
 
-            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">
                 Description <span className="text-red-500">*</span>
@@ -308,15 +324,6 @@ export default function SubmitRequestPage() {
               </p>
             </div>
 
-            {/* Attachments
-            <fieldset className="fieldset">
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                Description <span className="text-red-500">*</span>
-              </label>
-              <input type="file" className="file-input" />
-              <label className="label">Max size 2MB</label>
-            </fieldset> */}
-
             <div className="pt-2">
               <button
                 type="submit"
@@ -330,19 +337,19 @@ export default function SubmitRequestPage() {
         </div>
       </div>
 
-      {/* Requests Detail or informations - right side */}
-      <div className="flex flex-col w-1/3 gap-6">
+      {/* Requests Detail sidebar - right side */}
+      {/* Change 3: Width full on mobile, 1/3 on desktop (lg:w-1/3) */}
+      <div className="flex flex-col w-full lg:w-1/3 gap-6">
         {/* About this request */}
-        <div className="bg-white rounded-xl border border-gray-100">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
           <div className="bg-blue-100 px-6 py-4 rounded-t-xl">
             <h2 className="text-lg font-bold text-slate-900">
               About This Request
             </h2>
           </div>
           <div className="flex flex-col p-6 gap-4">
-            {/* header */}
             <div className="flex flex-row gap-4 items-start">
-              <div className={`p-3 ${info.iconBg} rounded-lg`}>
+              <div className={`p-3 ${info.iconBg} rounded-lg shrink-0`}>
                 <Icon
                   icon={info.icon}
                   className={`w-6 h-6 ${info.iconColor}`}
@@ -376,35 +383,40 @@ export default function SubmitRequestPage() {
             </ul>
           </div>
         </div>
+
         {/* Processing time */}
-        <div className="bg-white rounded-xl border border-gray-100">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
           <div className="bg-purple-100 px-6 py-4 rounded-t-xl">
             <h2 className="text-lg font-bold text-slate-900">
               Processing Time
             </h2>
           </div>
-
-          <div className="flex flex-col p-6 gap-3">
-            <div className="flex flex-row justify-between p-3 rounded-xl text-orange-700 text-sm bg-orange-100">
-              <p className="font-medium">Emergency</p>
-              <p className="font-light">Immediate review</p>
-            </div>
-            <div className="flex flex-row justify-between p-3 rounded-xl text-blue-700 text-sm bg-blue-100">
-              <p className="font-medium">Remote Work</p>
-              <p className="font-light">1-2 business days</p>
-            </div>
-            <div className="flex flex-row justify-between p-3 rounded-xl text-red-700 text-sm bg-red-100">
-              <p className="font-medium">Leave Request</p>
-              <p className="font-light">2-3 business days</p>
-            </div>
-            <div className="flex flex-row justify-between p-3 rounded-xl text-purple-700 text-sm bg-purple-100">
-              <p className="font-medium">General Request</p>
-              <p className="font-light">3-5 business days</p>
-            </div>
+          <div className="flex flex-col p-4 md:p-6 gap-3">
+            <ProcessingItem
+              label="Emergency"
+              time="Immediate review"
+              color="orange"
+            />
+            <ProcessingItem
+              label="Remote Work"
+              time="1-2 business days"
+              color="blue"
+            />
+            <ProcessingItem
+              label="Leave Request"
+              time="2-3 business days"
+              color="red"
+            />
+            <ProcessingItem
+              label="General Request"
+              time="3-5 business days"
+              color="purple"
+            />
           </div>
         </div>
+
         {/* Need Help */}
-        <div className="bg-white rounded-xl border border-gray-100">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
           <div className="bg-green-100 px-6 py-4 rounded-t-xl">
             <h2 className="text-lg font-bold text-slate-900">Need Help?</h2>
           </div>
@@ -412,21 +424,39 @@ export default function SubmitRequestPage() {
             <p className="text-sm text-gray-500">
               If you have questions about submitting a request, contact:
             </p>
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-semibold text-slate-800">
-                Managing Director
-              </p>
-              <p className="text-xs text-blue-600">tobeinput@new-wave.io</p>
-            </div>
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-semibold text-slate-800">
-                Support Team
-              </p>
-              <p className="text-xs text-blue-600">tobeinput@new-wave.io</p>
-            </div>
+            <ContactItem
+              name="Managing Director"
+              email="tobeinput@new-wave.io"
+            />
+            <ContactItem name="Support Team" email="tobeinput@new-wave.io" />
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+/* Internal helpers to keep the code clean */
+const ProcessingItem = ({
+  label,
+  time,
+  color,
+}: {
+  label: string;
+  time: string;
+  color: string;
+}) => (
+  <div
+    className={`flex flex-row justify-between p-3 rounded-xl text-${color}-700 text-sm bg-${color}-100`}
+  >
+    <p className="font-medium">{label}</p>
+    <p className="font-light">{time}</p>
+  </div>
+);
+
+const ContactItem = ({ name, email }: { name: string; email: string }) => (
+  <div className="flex flex-col gap-1">
+    <p className="text-sm font-semibold text-slate-800">{name}</p>
+    <p className="text-xs text-blue-600">{email}</p>
+  </div>
+);

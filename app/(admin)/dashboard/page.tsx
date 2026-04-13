@@ -92,7 +92,7 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full flex flex-col gap-6">
-      <div className="flex flex-row gap-4 w-full">
+      <div className="flex flex-col md:flex-row gap-4 w-full">
         <DashboardSummary
           icon="mingcute:group-line"
           title="Total Employees"

@@ -31,6 +31,14 @@ export default function SideBar({
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
   };
+  const closeDrawer = () => {
+    const drawerCheckbox = document.getElementById(
+      "main-sidebar"
+    ) as HTMLInputElement;
+    if (drawerCheckbox) {
+      drawerCheckbox.checked = false;
+    }
+  };
 
   const getDescription = () => {
     if (!mounted) return "";
@@ -50,9 +58,7 @@ export default function SideBar({
       case "/settings":
         return "Manage system configurations and preferences";
       case "/my-dashboard":
-        return `Welcome back, ${
-          user?.fullname || "Guest User"
-        }!`;
+        return `Welcome back, ${user?.fullname || "Guest User"}!`;
       case "/my-attendance":
         return "View your attendance history and records";
       case "/my-requests":
@@ -166,9 +172,7 @@ export default function SideBar({
           <div className="flex-none px-4"></div>
         </nav>
 
-        <div className="p-6 bg-base-200 overflow-auto">
-          {children}
-        </div>
+        <div className="p-6 bg-base-200 overflow-auto">{children}</div>
       </div>
 
       {/* SIDEBAR (DRAWER SIDE) */}
@@ -185,12 +189,12 @@ export default function SideBar({
 
           <ul className="menu menu-md px-4 gap-2 grow w-full">
             {menuItems.map((item) => {
-              // Only check active state if mounted
               const isActive = mounted && pathname === item.href;
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
+                    onClick={closeDrawer}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                       isActive
                         ? "bg-blue-100 text-blue-700 font-md"

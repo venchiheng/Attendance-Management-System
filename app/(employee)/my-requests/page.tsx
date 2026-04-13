@@ -70,10 +70,11 @@ export default function MyRequestsPage() {
   }, [requests]);
 
   return (
-    <div>
-      <div className="flex flex-row gap-6">
+    <div className="p-4 md:p-0">
+      {/* SUMMARY STATS: Grid 2 cols on mobile, 5 cols on desktop */}
+      <div className="grid grid-cols-2 md:flex md:flex-row gap-3 md:gap-6">
         <AttendanceSummary
-          title="Total Requests"
+          title="Total"
           value={stats.total}
           colorClass="border-gray-200 text-blue-600"
         />
@@ -92,51 +93,62 @@ export default function MyRequestsPage() {
           value={stats.rejected}
           colorClass="border-gray-200 text-red-600"
         />
-        <AttendanceSummary
-          title="Cancelled"
-          value={stats.cancelled}
-          colorClass="border-gray-200 text-gray-600"
-        />
+        {/* On mobile, this will span full width to look better if 5 items */}
+        <div className="col-span-2 md:contents">
+          <AttendanceSummary
+            title="Cancelled"
+            value={stats.cancelled}
+            colorClass="border-gray-200 text-gray-600"
+          />
+        </div>
       </div>
 
-      <div className="bg-white w-full mt-6 rounded-t-2xl shadow-sm border border-gray-100">
-        <div className="flex flex-row gap-4 p-6">
-          <SearchBar 
-            placeholder="Search requests..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <Selector
-            options={[
-              { label: "Leave Request", value: "Leave" },
-              { label: "Remote Work", value: "Remote" },
-              { label: "Emergency", value: "Emergency" },
-              { label: "General", value: "General" },
-            ]}
-            placeholder="All Type"
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-          ></Selector>
-          <Selector
-            options={[
-              { label: "Pending", value: "pending" },
-              { label: "Approved", value: "approved" },
-              { label: "Rejected", value: "rejected" },
-              { label: "Cancelled", value: "cancelled" },
-            ]}
-            placeholder="All Status"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          ></Selector>
+      <div className="bg-white w-full mt-6 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* FILTER BAR: Responsive Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row gap-4 p-4 md:p-6">
+          <div className="lg:flex-1">
+            <SearchBar 
+              placeholder="Search requests..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="w-full lg:w-48">
+            <Selector
+              options={[
+                { label: "Leave Request", value: "Leave" },
+                { label: "Remote Work", value: "Remote" },
+                { label: "Emergency", value: "Emergency" },
+                { label: "General", value: "General" },
+              ]}
+              placeholder="All Type"
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+            />
+          </div>
+          <div className="w-full lg:w-48">
+            <Selector
+              options={[
+                { label: "Pending", value: "pending" },
+                { label: "Approved", value: "approved" },
+                { label: "Rejected", value: "rejected" },
+                { label: "Cancelled", value: "cancelled" },
+              ]}
+              placeholder="All Status"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            />
+          </div>
           <button 
-            className="btn w-fit bg-[#1A77F2] text-white hover:bg-[#1A77F2]/90" 
+            className="btn w-full lg:w-fit bg-[#1A77F2] text-white hover:bg-[#1A77F2]/90 flex items-center justify-center gap-2" 
             onClick={() => router.push("/submit-request")}
           >
-            + New Request
+            <span className="text-xl">+</span> New Request
           </button>
         </div>
 
-        <div className="flex flex-col gap-4 pb-6">
+        {/* LIST SECTION */}
+        <div className="flex flex-col">
           {loading ? (
             <div className="flex justify-center py-10">
               <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -150,7 +162,9 @@ export default function MyRequestsPage() {
               />
             ))
           ) : (
-            <div className="text-center py-10 text-gray-400">No requests found.</div>
+            <div className="text-center py-20 text-gray-400">
+              <p className="font-medium">No requests found matching your filters.</p>
+            </div>
           )}
         </div>
       </div>

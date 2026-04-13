@@ -9,7 +9,6 @@ export default function MyProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        // Assuming /api/employees/me returns the profile of the current user
         const res = await fetch("/api/employees/me");
         if (res.ok) {
           const data = await res.json();
@@ -57,14 +56,15 @@ export default function MyProfilePage() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8">
-      {/* Left side */}
-      <div className="flex flex-col flex-1 bg-white rounded-2xl max-w-1/3  border border-gray-100">
+    <div className="flex flex-col lg:flex-row gap-8 p-4 md:p-0">
+      {/* Left side - Profile Overview */}
+      {/* Changed max-w-1/3 to lg:max-w-[320px] and w-full for mobile */}
+      <div className="flex flex-col w-full lg:max-w-[320px] bg-white rounded-2xl border border-gray-100 h-fit">
         {/* Header */}
-        <div className="flex flex-col items-center text-center gap-4 p-6 rounded-t-2xl bg-blue-100">
+        <div className="flex flex-col items-center text-center gap-4 p-6 md:p-8 rounded-t-2xl bg-blue-100">
           <div className="avatar placeholder">
-            <div className="bg-blue-600 text-primary-content flex items-center justify-center rounded-full w-20 h-20">
-              <span className="text-2xl font-semibold">
+            <div className="bg-blue-600 text-primary-content flex items-center justify-center rounded-full w-20 h-20 md:w-24 md:h-24 shadow-lg">
+              <span className="text-2xl md:text-3xl font-semibold">
                 {employee.full_name
                   ? employee.full_name
                       .split(" ")
@@ -77,97 +77,79 @@ export default function MyProfilePage() {
             </div>
           </div>
           <div>
-            <h2 className="text-2xl font-bold">{employee.full_name}</h2>
-            <p className="text-gray-500">
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-800">{employee.full_name}</h2>
+            <p className="text-blue-600 font-medium text-sm md:text-base">
               {employee.positions?.name || "No Position Assigned"}
             </p>
-            <p className="text-sm text-gray-400 mt-1 font-medium">
-              Employee ID: {employee.employee_code || "---"} 
+            <p className="text-xs text-gray-400 mt-2 font-medium uppercase tracking-wider">
+              ID: {employee.employee_code || "---"} 
             </p>
           </div>
         </div>
 
         {/* Detail */}
         <div className="flex flex-col gap-6 p-6">
-          <div className="flex flex-col gap-2">
-            <p className="text-md text-gray-500">Department</p>
-            <p className="font-medium">{employee.departments?.name || "---"}</p>
-          </div>
-          <div className="flex flex-col gap-2">
-            <p className="text-md text-gray-500">Work Mode</p>
-            <p className="font-medium capitalize">
-              {employee.work_mode || "---"}
-            </p>
-          </div>
-          <div className="flex flex-col gap-2">
-            <p className="text-md text-gray-500">Employment Type</p>
-            <p className="font-medium capitalize">
-              {employee.employment_type?.replace("_", " ")}
-            </p>
-          </div>
-          <div className="flex flex-col gap-2">
-            <p className="text-md text-gray-500">Joined Date</p>
-            <p className="font-medium">{employee.hire_date || "---"}</p>
-          </div>
+          <DetailItem label="Department" value={employee.departments?.name || "---"} />
+          <DetailItem label="Work Mode" value={employee.work_mode} isCapitalize />
+          <DetailItem label="Employment Type" value={employee.employment_type?.replace("_", " ")} isCapitalize />
+          <DetailItem label="Joined Date" value={employee.hire_date || "---"} />
         </div>
       </div>
 
-      {/* Right side */}
-      <div className="flex flex-col flex-1 gap-8">
+      {/* Right side - Content Sections */}
+      <div className="flex flex-col flex-1 gap-6 md:gap-8">
+        
         {/* Contact Information */}
-        <div className="bg-white rounded-2xl border border-gray-100 flex flex-col">
+        <div className="bg-white rounded-2xl border border-gray-100 flex flex-col shadow-sm">
           <div className="flex flex-row items-center bg-purple-100 p-4 rounded-t-2xl gap-3">
             <div className="flex items-center bg-purple-600 p-2 rounded-xl text-white">
-              <Icon icon="tabler:user" className="w-6 h-6" />
+              <Icon icon="tabler:user" className="w-5 h-5 md:w-6 md:h-6" />
             </div>
-            <h2 className="text-lg font-bold">Contact Information</h2>
+            <h2 className="text-lg font-semibold text-purple-900">Contact Information</h2>
           </div>
 
-          <div className="flex flex-col p-6 gap-4 ">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
             <div className="flex flex-col">
-              <span className="text-md text-gray-500 mb-2">Email Address</span>
-              <p className="font-medium">{employee.email}</p>
+              <span className="text-sm text-gray-500 mb-1 font-medium">Email Address</span>
+              <p className="font-semibold text-gray-800">{employee.email}</p>
             </div>
             <div className="flex flex-col">
-              <span className="text-md text-gray-500 mb-2">Phone Number</span>
-              <p className="font-medium">{employee.phone_number || "---"}</p>
+              <span className="text-sm text-gray-500 mb-1 font-medium">Phone Number</span>
+              <p className="font-semibold text-gray-800">{employee.phone_number || "---"}</p>
             </div>
           </div>
         </div>
 
         {/* Employment details */}
-        <div className="bg-white rounded-2xl border border-gray-100 flex flex-col">
+        <div className="bg-white rounded-2xl border border-gray-100 flex flex-col shadow-sm">
           <div className="flex flex-row items-center bg-green-100 p-4 rounded-t-2xl gap-3">
             <div className="flex items-center bg-green-600 p-2 rounded-xl text-white">
               <Icon
                 icon="majesticons:checkbox-list-detail-line"
-                className="w-6 h-6"
+                className="w-5 h-5 md:w-6 md:h-6"
               />
             </div>
-            <h2 className="text-lg font-bold">Employment Details</h2>
+            <h2 className="text-lg font-semibold text-green-900">Employment Details</h2>
           </div>
 
-          <div className="grid grid-cols-2 gap-4  p-6">
-            <div className="flex flex-col gap-1 text-blue-800 bg-blue-100 p-4 rounded-2xl border border-blue-400">
-              <div className="flex flex-row items-center gap-2">
-                <Icon icon={"mingcute:time-duration-line"}></Icon>
-                <span className="text-md">Time with Company</span>
+          {/* Changed grid-cols-2 to grid-cols-1 md:grid-cols-2 for better mobile fit */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
+            <div className="flex flex-col gap-1 text-blue-800 bg-blue-50 p-5 rounded-2xl border border-blue-200">
+              <div className="flex flex-row items-center gap-2 mb-1">
+                <Icon icon={"mingcute:time-duration-line"} className="w-4 h-4"></Icon>
+                <span className="text-sm font-medium">Time with Company</span>
               </div>
-
               <p className="text-xl font-semibold">
                 {calculateTimeWithCompany(employee.hire_date)}
               </p>
             </div>
-            <div className="flex flex-col gap-1 text-purple-800 bg-purple-100 p-4 rounded-2xl border border-purple-400">
-              <div className="flex flex-row items-center gap-2">
-                <Icon icon={"solar:global-linear"}></Icon>
-                <span className="text-md">Employment Status</span>
+            
+            <div className="flex flex-col gap-1 text-purple-800 bg-purple-50 p-5 rounded-2xl border border-purple-200">
+              <div className="flex flex-row items-center gap-2 mb-1">
+                <Icon icon={"solar:global-linear"} className="w-4 h-4"></Icon>
+                <span className="text-sm font-medium">Employment Status</span>
               </div>
-              <p
-                className={`text-xl font-semibold capitalize ${
-                  employee.employment_status === "active"
-                }`}
-              >
+              <p className="text-xl font-semibold capitalize">
                 {employee.employment_status || "---"}
               </p>
             </div>
@@ -177,3 +159,13 @@ export default function MyProfilePage() {
     </div>
   );
 }
+
+// Helper component for detail items on the left side
+const DetailItem = ({ label, value, isCapitalize }: { label: string, value: string, isCapitalize?: boolean }) => (
+  <div className="flex flex-col gap-1">
+    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
+    <p className={`font-semibold text-gray-700 ${isCapitalize ? 'capitalize' : ''}`}>
+      {value || "---"}
+    </p>
+  </div>
+);

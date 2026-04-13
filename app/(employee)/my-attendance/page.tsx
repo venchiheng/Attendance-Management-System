@@ -91,9 +91,9 @@ export default function MyAttendancePage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-row items-center justify-between mb-6">
-        <div className="flex flex-row w-full justify-between items-center gap-4">
+        <div className="flex flex-col md:flex-row w-full justify-between gap-4">
           <div className="flex gap-2 items-center">
-            <div className="w-48">
+            <div className="w-fit">
               <DateInput
                 mode="month"
                 value={selectedMonth}

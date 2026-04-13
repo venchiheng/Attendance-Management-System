@@ -84,7 +84,7 @@ export default function ReportsPage() {
         </button>
       </div>
 
-      <div className="flex flex-row gap-4">
+      <div className="flex md:flex-row flex-col gap-4">
         <ReportSummary
           title="Total Attendance"
           subtitle="Employees Present"

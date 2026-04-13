@@ -79,7 +79,10 @@ export default function AttendancePage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `attendance_logs_${filterDate || "export"}.csv`);
+    link.setAttribute(
+      "download",
+      `attendance_logs_${filterDate || "export"}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -89,18 +92,13 @@ export default function AttendancePage() {
     <div className="flex flex-col gap-4">
       {/* Search and Filters Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex w-full gap-2">
+        <div className="md:flex md:flex-row grid grid-cols-2 w-full gap-4">
           <SearchBar
             placeholder="Search name or date..."
             value={searchQuery}
             onChange={(e: any) => setSearchQuery(e.target.value)}
           />
-          <div className="w-48">
-            <DateInput
-              value={filterDate}
-              onChange={(val) => setFilterDate(val)}
-            />
-          </div>
+
           <Selector
             value={filterStatus}
             placeholder="All Statuses"
@@ -113,14 +111,20 @@ export default function AttendancePage() {
               { label: "Remote", value: "Remote" },
             ]}
           />
+          
+          <DateInput
+            value={filterDate}
+            onChange={(val) => setFilterDate(val)}
+          />
+
           <button
             onClick={handleExportCSV}
-            className="btn btn-md bg-green-500 text-white hover:bg-green-700 "
+            className="btn btn-md bg-green-500 text-white hover:bg-green-700 w-fit"
           >
             <Icon
               icon="material-symbols:download-rounded"
               className="w-5 h-5"
-            ></Icon>
+            />
             Export CSV
           </button>
         </div>

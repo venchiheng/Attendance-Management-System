@@ -128,7 +128,7 @@ export default function HolidayContainer() {
   if (loading) return <div className="p-4">Loading holidays...</div>;
 
   return (
-    <div className="p-4">
+    <div>
       <SettingCard
         icon="iconamoon:clock"
         iconBgColor="bg-red-600"
