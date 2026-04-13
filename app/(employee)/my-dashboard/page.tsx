@@ -125,7 +125,7 @@ export default function page({}: Props) {
                   return (
                     <div
                       key={dayName}
-                      className={`p-4 w-fit flex rounded-xl min-w-24 flex-col items-center gap-1 border-2 transition-all
+                      className={`p-4 w-fit flex rounded-xl min-w-24 md:w-full flex-col items-center gap-1 border-2 transition-all
                       ${
                         log
                           ? "bg-blue-50 border-blue-500 shadow-sm"
