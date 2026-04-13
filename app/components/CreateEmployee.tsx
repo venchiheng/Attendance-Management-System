@@ -13,6 +13,12 @@ const WORK_MODES = ["on-site", "remote", "hybrid"];
 const EMPLOYMENT_TYPES = ["full_time", "part_time"];
 const EMPLOYMENT_STATUSES = ["active", "inactive"];
 
+const RequiredLabel = ({ children }: { children: React.ReactNode }) => (
+  <p className="text-sm font-semibold text-gray-400 mb-2">
+    {children} <span className="text-red-500">*</span>
+  </p>
+);
+
 export default function CreateEmployee({
   isOpen,
   onClose,
@@ -46,25 +52,61 @@ export default function CreateEmployee({
   };
 
   // UI Helper for refined "View" mode styling
-  const inputClass = (custom?: string) => `w-full ${isView ? "bg-white border-none focus:outline-none cursor-default font-medium text-black" : "input input-bordered w-full"} ${custom || ""}`;
-  const selectClass = `w-full ${isView ? "bg-white border-none focus:outline-none cursor-default appearance-none font-medium text-black" : "select-bordered"}`;
+  const inputClass = (custom?: string) =>
+    `w-full ${
+      isView
+        ? "bg-white border-none focus:outline-none cursor-default font-medium text-black"
+        : "input input-bordered w-full"
+    } ${custom || ""}`;
+  const selectClass = `w-full ${
+    isView
+      ? "bg-white border-none focus:outline-none cursor-default appearance-none font-medium text-black"
+      : "select-bordered"
+  }`;
   const labelClass = "text-sm font-semibold text-gray-400 mb-2";
 
   // Helper to format text (e.g. full_time -> Full Time)
   const formatLabel = (str: string) => {
-    return str?.replace(/[-_]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) || "---";
+    return (
+      str?.replace(/[-_]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) ||
+      "---"
+    );
   };
 
   const handleSave = async () => {
-    if (!formData.email || !formData.full_name) {
-      alert("Name and Email are required.");
+    // 1. Define all fields that must be filled
+    const requiredFields = [
+      { key: "full_name", label: "Full Name" },
+      { key: "email", label: "Email Address" },
+      { key: "phone_number", label: "Phone Number" },
+      { key: "position_id", label: "Position" },
+      { key: "department_id", label: "Department" },
+      { key: "shift_id", label: "Shift Type" },
+      { key: "hire_date", label: "Hire Date" },
+      { key: "work_mode", label: "Work Mode" },
+      { key: "employment_type", label: "Employment Type" },
+    ];
+
+    // 2. Check for missing values
+    for (const field of requiredFields) {
+      if (
+        !formData[field.key] ||
+        formData[field.key].toString().trim() === ""
+      ) {
+        alert(`${field.label} is required.`);
+        return;
+      }
+    }
+
+    // Optional: Basic Email Regex Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      alert("Please enter a valid email address.");
       return;
     }
 
     setLoading(true);
-
     try {
-      // 1. Determine the URL and Method dynamically
       const url = isEdit ? "/api/employees" : "/api/employees/invite";
       const method = isEdit ? "PUT" : "POST";
 
@@ -77,15 +119,10 @@ export default function CreateEmployee({
       const result = await response.json();
 
       if (response.ok) {
-        console.log(formData);
         onSuccess();
         onClose();
       } else {
-        alert(
-          typeof result.error === "string"
-            ? result.error
-            : "Failed to save employee."
-        );
+        alert(result.error || "Failed to save employee.");
       }
     } catch (error) {
       console.error("Save error:", error);
@@ -120,9 +157,11 @@ export default function CreateEmployee({
         <div className="divider mt-1"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="col-span-1">
-            <p className={labelClass}>Full Name</p>
+            <RequiredLabel>Full Name</RequiredLabel>{" "}
             {isView ? (
-              <div className="py-2 text-black font-medium">{formData.full_name || "---"}</div>
+              <div className="py-2 text-black font-medium">
+                {formData.full_name || "---"}
+              </div>
             ) : (
               <input
                 name="full_name"
@@ -135,18 +174,18 @@ export default function CreateEmployee({
           </div>
           {isView && (
             <div>
-              <p className={labelClass}>
-                Employee Code
-              </p>
+              <RequiredLabel>Employee Code</RequiredLabel>
               <div className="py-2 text-black font-medium">
                 {formData.employee_code || "---"}
               </div>
             </div>
           )}
           <div>
-            <p className={labelClass}>Email Address</p>
+            <RequiredLabel>Email Address</RequiredLabel>
             {isView ? (
-              <div className="py-2 text-black font-medium">{formData.email || "---"}</div>
+              <div className="py-2 text-black font-medium">
+                {formData.email || "---"}
+              </div>
             ) : (
               <input
                 name="email"
@@ -158,9 +197,11 @@ export default function CreateEmployee({
             )}
           </div>
           <div>
-            <p className={labelClass}>Phone Number</p>
+            <RequiredLabel>Phone Number</RequiredLabel>
             {isView ? (
-              <div className="py-2 text-black font-medium">{formData.phone_number || "---"}</div>
+              <div className="py-2 text-black font-medium">
+                {formData.phone_number || "---"}
+              </div>
             ) : (
               <input
                 name="phone_number"
@@ -172,7 +213,7 @@ export default function CreateEmployee({
             )}
           </div>
           <div className="col-span-2 ">
-            <p className={labelClass}>NFC Card ID</p>
+            <RequiredLabel>NFC Card ID</RequiredLabel>
             <input
               name="nfc_id"
               value={formData.nfc_id || ""}
@@ -180,9 +221,7 @@ export default function CreateEmployee({
               readOnly={isView}
               className={inputClass()}
             />
-            
           </div>
-          
         </div>
 
         {/* JOB INFO */}
@@ -192,54 +231,58 @@ export default function CreateEmployee({
         <div className="divider mt-1"></div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className={labelClass}>Position</p>
+            <RequiredLabel>Position</RequiredLabel>
             {isView ? (
               <div className="py-2 text-black font-medium">
-                {metadata.positions.find((p: any) => p.id === formData.position_id)?.name || "---"}
+                {metadata.positions.find(
+                  (p: any) => p.id === formData.position_id
+                )?.name || "---"}
               </div>
             ) : (
-            <select
-              name="position_id"
-              value={formData.position_id || ""}
-              onChange={handleChange}
-              disabled={isView}
-              className="select select-bordered w-full"
-            >
-              <option value="">Select Position</option>
-              {metadata.positions.map((p: any) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+              <select
+                name="position_id"
+                value={formData.position_id || ""}
+                onChange={handleChange}
+                disabled={isView}
+                className="select select-bordered w-full"
+              >
+                <option value="">Select Position</option>
+                {metadata.positions.map((p: any) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
           <div>
-            <p className={labelClass}>Department</p>
+            <RequiredLabel>Department</RequiredLabel>
             {isView ? (
               <div className="py-2 text-black font-medium">
-                {metadata.departments.find((d: any) => d.id === formData.department_id)?.name || "---"}
+                {metadata.departments.find(
+                  (d: any) => d.id === formData.department_id
+                )?.name || "---"}
               </div>
             ) : (
-            <select
-              name="department_id"
-              value={formData.department_id || ""}
-              onChange={handleChange}
-              disabled={isView}
-              className="select select-bordered w-full"
-            >
-              <option value="">Select Department</option>
-              {metadata.departments.map((d: any) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
+              <select
+                name="department_id"
+                value={formData.department_id || ""}
+                onChange={handleChange}
+                disabled={isView}
+                className="select select-bordered w-full"
+              >
+                <option value="">Select Department</option>
+                {metadata.departments.map((d: any) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
-          
+
           <div>
-            <p className={labelClass}>Hire Date</p>
+            <RequiredLabel>Hire Date</RequiredLabel>
             <input
               type={isView ? "text" : "date"}
               name="hire_date"
@@ -250,92 +293,100 @@ export default function CreateEmployee({
             />
           </div>
           <div>
-            <p className={labelClass}>Work Mode</p>
+            <RequiredLabel>Work Mode</RequiredLabel>
             {isView ? (
-              <div className="py-2 text-black font-medium">{formatLabel(formData.work_mode)}</div>
+              <div className="py-2 text-black font-medium">
+                {formatLabel(formData.work_mode)}
+              </div>
             ) : (
-            <select
-              name="work_mode"
-              value={formData.work_mode || ""}
-              onChange={handleChange}
-              disabled={isView}
-              className="select select-bordered w-full"
-            >
-              {WORK_MODES.map((m) => (
-                <option key={m} value={m}>
-                  {formatLabel(m)}
-                </option>
-              ))}
-            </select>
+              <select
+                name="work_mode"
+                value={formData.work_mode || ""}
+                onChange={handleChange}
+                disabled={isView}
+                className="select select-bordered w-full"
+              >
+                {WORK_MODES.map((m) => (
+                  <option key={m} value={m}>
+                    {formatLabel(m)}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
           <div>
-            <p className={labelClass}>Shift Type</p>
+            <RequiredLabel>Shift Type</RequiredLabel>
             {isView ? (
               <div className="py-2 text-black font-medium">
                 {(() => {
-                  const s = metadata.shifts.find((s: any) => s.id === formData.shift_id);
+                  const s = metadata.shifts.find(
+                    (s: any) => s.id === formData.shift_id
+                  );
                   return s ? `${s.shift_name}` : "---";
                 })()}
               </div>
             ) : (
-            <select
-              name="shift_id"
-              value={formData.shift_id || ""}
-              onChange={handleChange}
-              disabled={isView}
-              className="select select-bordered w-full"
-            >
-              <option value="">Select Shift</option>
-              {metadata.shifts.map((s: any) => (
-                <option key={s.id} value={s.id}>
-                  {s.shift_name}
-                </option>
-              ))}
-            </select>
+              <select
+                name="shift_id"
+                value={formData.shift_id || ""}
+                onChange={handleChange}
+                disabled={isView}
+                className="select select-bordered w-full"
+              >
+                <option value="">Select Shift</option>
+                {metadata.shifts.map((s: any) => (
+                  <option key={s.id} value={s.id}>
+                    {s.shift_name}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
           <div>
-            <p className={labelClass}>Employment Type</p>
+            <RequiredLabel>Employment Type</RequiredLabel>
             {isView ? (
-              <div className="py-2 text-black font-medium">{formatLabel(formData.employment_type)}</div>
+              <div className="py-2 text-black font-medium">
+                {formatLabel(formData.employment_type)}
+              </div>
             ) : (
-            <select
-              name="employment_type"
-              value={formData.employment_type || ""}
-              onChange={handleChange}
-              disabled={isView}
-              className="select select-bordered w-full"
-            >
-              {EMPLOYMENT_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {formatLabel(t)}
-                </option>
-              ))}
-            </select>
+              <select
+                name="employment_type"
+                value={formData.employment_type || ""}
+                onChange={handleChange}
+                disabled={isView}
+                className="select select-bordered w-full"
+              >
+                {EMPLOYMENT_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {formatLabel(t)}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
         </div>
 
         {(isEdit || isView) && (
           <div className="mt-4">
-            <p className={labelClass}>Employment Status</p>
+            <RequiredLabel>Employment Status</RequiredLabel>
             {isView ? (
-              <div className="py-2 text-black font-medium">{formatLabel(formData.employment_status)}</div>
+              <div className="py-2 text-black font-medium">
+                {formatLabel(formData.employment_status)}
+              </div>
             ) : (
-            <select
-              name="employment_status"
-              value={formData.employment_status || ""}
-              onChange={handleChange}
-              disabled={isView}
-              className="select select-bordered w-full"
-            >
-              {EMPLOYMENT_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {formatLabel(s)}
-                </option>
-              ))}
-            </select>
+              <select
+                name="employment_status"
+                value={formData.employment_status || ""}
+                onChange={handleChange}
+                disabled={isView}
+                className="select select-bordered w-full"
+              >
+                {EMPLOYMENT_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {formatLabel(s)}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
         )}
