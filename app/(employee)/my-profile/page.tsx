@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { updatePassword } from "@/app/lib/actions/auth";
 
