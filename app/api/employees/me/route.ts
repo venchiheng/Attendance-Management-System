@@ -39,6 +39,9 @@ export async function GET() {
         ),
         departments (
           name
+        ),
+        profiles (
+          pfp_url
         )
       `
       )

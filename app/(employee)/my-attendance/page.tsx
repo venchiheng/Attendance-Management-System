@@ -1,23 +1,41 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+
+import { Fragment, useEffect, useMemo, useState } from "react";
 import DashboardSummary from "@/app/components/DashboardSummary";
-import InfoTable from "@/app/components/InfoTable";
 import Selector from "@/app/components/Selector";
 import DateInput from "@/app/components/DateInput";
 import { Icon } from "@iconify/react";
 
-const columns = [
-  { label: "Date", key: "date" },
-  { label: "Check In", key: "checkIn" },
-  { label: "Check Out", key: "checkOut" },
-  { label: "Work Hours", key: "workHours" },
-  { label: "Status", key: "status" },
-];
+type SessionItem = {
+  id: string;
+  tapNumber: number;
+  checkIn: string;
+  checkOut: string;
+  duration: string;
+  rawCheckIn: string | null;
+  rawCheckOut: string | null;
+  rawMinutes: number;
+};
+
+type AttendanceLog = {
+  id: string;
+  date: string;
+  checkIn: string;
+  checkOut: string;
+  workHours: string;
+  workedMinutes: number;
+  status: string;
+  tapCount: number;
+  sessions: SessionItem[];
+};
 
 export default function MyAttendancePage() {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<AttendanceLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [expandedLogs, setExpandedLogs] = useState<Record<string, boolean>>({});
+  const [selectedMonth, setSelectedMonth] = useState(
+    new Date().toISOString().slice(0, 7)
+  );
   const [filterStatus, setFilterStatus] = useState("all");
 
   useEffect(() => {
@@ -33,50 +51,98 @@ export default function MyAttendancePage() {
         setLoading(false);
       }
     };
+
     fetchMyLogs();
   }, []);
+
+  const toggleExpand = (logId: string) => {
+    setExpandedLogs((prev) => ({
+      ...prev,
+      [logId]: !prev[logId],
+    }));
+  };
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
       const matchesMonth = log.date?.startsWith(selectedMonth);
-      // Use case-insensitive comparison for the status filter
-      const matchesStatus = filterStatus === "all" || 
+      const matchesStatus =
+        filterStatus === "all" ||
         log.status?.toLowerCase() === filterStatus.toLowerCase();
+
       return matchesMonth && matchesStatus;
     });
   }, [logs, selectedMonth, filterStatus]);
 
   const stats = useMemo(() => {
-    if (filteredLogs.length === 0) return { present: 0, leave: 0, avgHours: "0", rate: "0", incomplete: 0 };
+    if (filteredLogs.length === 0) {
+      return {
+        present: 0,
+        leave: 0,
+        avgHours: "0.0",
+        rate: "0",
+        incomplete: 0,
+      };
+    }
 
-    // Standardize status checks with .toLowerCase()
-    const presentLogs = filteredLogs.filter(l => ["present", "late"].includes(l.status?.toLowerCase()));
-    const presentCount = presentLogs.length;
-    const leaveCount = filteredLogs.filter(l => l.status?.toLowerCase() === "on leave").length;
-    
-    // Only count as incomplete if the user was actually present/late but worked < 8 hours
-    const incompleteCount = presentLogs.filter(l => !l.checkOut || (parseFloat(l.workHours) < 8)).length;
-    
-    // Calculate total hours only for "Present" or "Late" status
-    const totalHours = presentLogs.reduce((acc, curr) => acc + (parseFloat(curr.workHours) || 0), 0);
-    
-    const rate = Math.min(Math.round((presentCount / 22) * 100), 100);
-    
+    const presentLogs = filteredLogs.filter((l) =>
+      ["present", "late"].includes(l.status?.toLowerCase())
+    );
+
+    const leaveCount = filteredLogs.filter(
+      (l) => l.status?.toLowerCase() === "on leave"
+    ).length;
+
+    const totalMinutes = presentLogs.reduce(
+      (acc, curr) => acc + (curr.workedMinutes || 0),
+      0
+    );
+
+    const incompleteCount = presentLogs.filter(
+      (l) => !l.checkOut || l.checkOut === "---" || (l.workedMinutes || 0) < 480
+    ).length;
+
+    const attendanceRate = Math.min(
+      Math.round((presentLogs.length / 22) * 100),
+      100
+    );
+
     return {
-      present: presentCount,
+      present: presentLogs.length,
       leave: leaveCount,
       incomplete: incompleteCount,
-      avgHours: presentCount > 0 ? (totalHours / presentCount).toFixed(1) : "0",
-      rate: rate.toString()
+      avgHours:
+        presentLogs.length > 0
+          ? (totalMinutes / 60 / presentLogs.length).toFixed(1)
+          : "0.0",
+      rate: attendanceRate.toString(),
     };
   }, [filteredLogs]);
 
   const handleExportCSV = () => {
     if (!filteredLogs.length) return;
-    const csvHeaders = columns.map(col => col.label).join(",");
-    const csvRows = filteredLogs.map((row: any) =>
-      columns.map(col => `"${row[col.key] ?? ""}"`).join(",")
+
+    const csvHeaders = [
+      "Date",
+      "Check In",
+      "Check Out",
+      "Work Hours",
+      "Status",
+      "Tap Count",
+    ].join(",");
+
+    const csvRows = filteredLogs.map((row) =>
+      [
+        row.date,
+        row.checkIn,
+        row.checkOut,
+        row.workHours,
+        row.status,
+        row.tapCount,
+      ]
+        .map((value) => `"${value ?? ""}"`)
+        .join(",")
     );
+
     const csvString = [csvHeaders, ...csvRows].join("\n");
     const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -86,6 +152,21 @@ export default function MyAttendancePage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const getStatusClass = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "present":
+        return "bg-green-100 text-green-700";
+      case "late":
+        return "bg-orange-100 text-orange-700";
+      case "absent":
+        return "bg-red-100 text-red-700";
+      case "on leave":
+        return "bg-blue-100 text-blue-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
   };
 
   return (
@@ -100,6 +181,7 @@ export default function MyAttendancePage() {
                 onChange={(val: string) => setSelectedMonth(val)}
               />
             </div>
+
             <Selector
               value={filterStatus}
               placeholder="All Statuses"
@@ -108,18 +190,19 @@ export default function MyAttendancePage() {
                 { label: "Present", value: "Present" },
                 { label: "Late", value: "Late" },
                 { label: "Absent", value: "Absent" },
-                { label: "On Leave", value: "On Leave" },
+                { label: "On Leave", value: "On leave" },
               ]}
             />
           </div>
+
           <button
             onClick={handleExportCSV}
-            className="btn btn-md bg-green-500 text-white hover:bg-green-700 "
+            className="btn btn-md bg-green-500 text-white hover:bg-green-700"
           >
             <Icon
               icon="material-symbols:download-rounded"
               className="w-5 h-5"
-            ></Icon>
+            />
             Export CSV
           </button>
         </div>
@@ -152,8 +235,144 @@ export default function MyAttendancePage() {
         />
       </div>
 
-      <div className="relative">
-        <InfoTable title="Attendance Records" columns={columns} rows={filteredLogs} />
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Attendance Records
+          </h2>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="table w-full">
+            <thead className="bg-gray-50 text-gray-600 text-sm">
+              <tr>
+                <th>Date</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Work Hours</th>
+                <th>Status</th>
+                <th>Total Sessions</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredLogs.length === 0 && !loading ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-gray-500">
+                    No attendance records found.
+                  </td>
+                </tr>
+              ) : (
+                filteredLogs.map((log) => (
+                  <Fragment key={log.id}>
+                    <tr className="hover">
+                      <td>{log.date}</td>
+                      <td>{log.checkIn}</td>
+                      <td>{log.checkOut}</td>
+                      <td>{log.workHours}</td>
+                      <td>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(
+                            log.status
+                          )}`}
+                        >
+                          {log.status}
+                        </span>
+                      </td>
+                      <td>{log.tapCount}</td>
+                      <td>
+                        <button
+                          onClick={() => toggleExpand(log.id)}
+                          className="btn btn-sm bg-black text-white hover:bg-gray-800 border-none"
+                        >
+                          <Icon
+                            icon={
+                              expandedLogs[log.id]
+                                ? "mdi:chevron-up"
+                                : "mdi:chevron-down"
+                            }
+                            className="w-4 h-4"
+                          />
+                          {expandedLogs[log.id] ? "Hide Log" : "Expand Log"}
+                        </button>
+                      </td>
+                    </tr>
+
+                    {expandedLogs[log.id] && (
+                      <tr>
+                        <td colSpan={7} className="bg-gray-50 px-6 py-4">
+                          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+                            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                              <div>
+                                <h3 className="font-semibold text-gray-800">
+                                  Session Details
+                                </h3>
+                                <p className="text-sm text-gray-500">
+                                  {log.date}
+                                </p>
+                              </div>
+                              <span className="text-sm text-gray-500">
+                                {log.sessions.length} session(s)
+                              </span>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                              <table className="table w-full">
+                                <thead className="bg-gray-50 text-xs text-gray-500">
+                                  <tr>
+                                    <th>#</th>
+                                    <th>Check In Tap</th>
+                                    <th>Check Out Tap</th>
+                                    <th>Duration</th>
+                                    <th>State</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {log.sessions.length === 0 ? (
+                                    <tr>
+                                      <td
+                                        colSpan={5}
+                                        className="text-center py-4 text-gray-500"
+                                      >
+                                        No session details found.
+                                      </td>
+                                    </tr>
+                                  ) : (
+                                    log.sessions.map((session) => (
+                                      <tr key={session.id}>
+                                        <td>{session.tapNumber}</td>
+                                        <td>{session.checkIn}</td>
+                                        <td>{session.checkOut}</td>
+                                        <td>{session.duration}</td>
+                                        <td>
+                                          {session.rawCheckOut ? (
+                                            <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                                              Closed
+                                            </span>
+                                          ) : (
+                                            <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-700">
+                                              Open
+                                            </span>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
         {loading && (
           <div className="flex justify-center py-10">
             <span className="loading loading-spinner loading-lg text-primary"></span>

@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
+import { updatePassword } from "@/app/lib/actions/auth";
+import { handleForgotPasswordN8N as requestPasswordReset } from "@/app/lib/actions/auth";
 
 export default function MyProfilePage() {
   const [employee, setEmployee] = useState<any>(null);
@@ -12,6 +14,10 @@ export default function MyProfilePage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -30,34 +36,68 @@ export default function MyProfilePage() {
     fetchProfile();
   }, []);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  // 1. Local UI Preview
-  setImagePreview(URL.createObjectURL(file));
-
-  // 2. Prepare Form Data
-  const formData = new FormData();
-  formData.append("file", file);
-
-  try {
-    const res = await fetch("/api/employees/upload-pfp", {
-      method: "POST",
-      body: formData, // Send as multipart/form-data
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      setEmployee({
-        ...employee,
-        profiles: { ...employee.profiles, pfp_url: data.url }
-      });
+  const handleUpload = async () => {
+    if (!selectedFile || !employee?.id) {
+      setIsEditing(false);
+      return;
     }
-  } catch (err) {
-    console.error("Upload failed:", err);
-  }
-};
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    formData.append("userId", employee.id);
+
+    try {
+      const res = await fetch("/api/employees/upload_pfp", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setEmployee((prev: any) => ({
+          ...prev,
+          profiles: { ...prev.profiles, pfp_url: data.url },
+        }));
+        setSelectedFile(null);
+        setImagePreview(null);
+        setIsEditing(false);
+      }
+    } catch (err) {
+      console.error("Upload failed:", err);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    // 1. Client-side Validation
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError("Password must be at least 6 characters.");
+      return;
+    }
+
+    setIsSaving(true);
+
+    const formData = new FormData();
+    formData.append("password", newPassword);
+
+    const result = await updatePassword(formData);
+
+    if (result?.error) {
+      setPasswordError(result.error);
+    } else {
+      setPasswordSuccess("Password updated successfully!");
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+    setIsSaving(false);
+  };
 
   const calculateTimeWithCompany = (hireDate: string) => {
     if (!hireDate) return "---";
@@ -108,17 +148,25 @@ export default function MyProfilePage() {
           <div className="relative group">
             {!isEditing ? (
               /* 1. VIEW MODE: Show Initials */
-              <div className="bg-blue-600 text-primary-content flex items-center justify-center rounded-full w-20 h-20 md:w-24 md:h-24 shadow-lg overflow-hidden">
-                <span className="text-2xl md:text-3xl font-semibold">
-                  {employee.full_name
-                    ? employee.full_name
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
-                        .toUpperCase()
-                        .slice(0, 2)
-                    : "U"}
-                </span>
+              <div className="relative rounded-full w-20 h-20 md:w-24 md:h-24 shadow-lg overflow-hidden flex items-center justify-center bg-blue-600 text-primary-content border-4 border-white">
+                {employee.profiles?.pfp_url ? (
+                  <img
+                    src={employee.profiles.pfp_url}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl md:text-3xl font-semibold">
+                    {employee.full_name
+                      ? employee.full_name
+                          .split(" ")
+                          .map((n: string) => n[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2)
+                      : "U"}
+                  </span>
+                )}
               </div>
             ) : (
               /* 2. EDIT MODE: Show Preview OR Upload Icon */
@@ -138,6 +186,12 @@ export default function MyProfilePage() {
                       />
                     </div>
                   </>
+                ) : employee.profiles?.pfp_url ? (
+                  <img
+                    src={employee.profiles.pfp_url}
+                    alt="Current Profile"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <>
                     <Icon
@@ -158,6 +212,7 @@ export default function MyProfilePage() {
                     const file = e.target.files?.[0];
                     if (file) {
                       // Create a temporary URL for the selected file
+                      setSelectedFile(file);
                       setImagePreview(URL.createObjectURL(file));
                     }
                   }}
@@ -266,7 +321,10 @@ export default function MyProfilePage() {
                 <button
                   type="button"
                   className="text-blue-600 text-sm font-semibold hover:underline w-fit"
-                  onClick={() => alert("Redirect to forgot password flow")}
+                  onClick={async () => {
+                    const res = await requestPasswordReset(employee.email);
+                    if (res.success) alert("Reset link sent to your email!");
+                  }}
                 >
                   Forgot password?
                 </button>
@@ -276,16 +334,36 @@ export default function MyProfilePage() {
 
               <div className="flex flex-row gap-3">
                 <button
-                  onClick={() => setIsEditing(false)}
+                  onClick={() => {
+                    setIsEditing(false);
+                    setImagePreview(null);
+                    setSelectedFile(null);
+                  }}
                   className="flex-1 btn btn-ghost rounded-2xl border-gray-200"
                 >
                   Cancel
                 </button>
                 <button
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 transition-colors p-3 rounded-2xl text-white font-semibold"
-                  onClick={() => setIsEditing(false)}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 transition-colors p-3 rounded-2xl text-white font-semibold flex items-center justify-center gap-2"
+                  onClick={async () => {
+                    // 1. If user typed in password fields, update password
+                    if (newPassword) {
+                      await handlePasswordChange();
+                    }
+                    // 2. If user selected a new file, upload it
+                    if (selectedFile) {
+                      await handleUpload();
+                    }
+
+                    // Only close editing if no errors occurred
+                    if (!passwordError) setIsEditing(false);
+                  }}
+                  disabled={isSaving}
                 >
-                  Save Changes
+                  {isSaving ? "Saving..." : "Save Changes"}
+                  {isSaving && (
+                    <span className="loading loading-spinner loading-sm"></span>
+                  )}
                 </button>
               </div>
             </div>

@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing file or User ID' }, { status: 400 });
     }
 
-    const SUPABASE_URL = process.env.SUPABASE_URL!;
+    const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
     // 1. Upload to Storage via REST API

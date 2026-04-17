@@ -14,7 +14,7 @@ export async function GET() {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  };
+  }
 
   // 1. Fetch Detailed Employee Info
   // Updated to match your schema: positions and departments
@@ -39,12 +39,14 @@ export async function GET() {
 
   // 2. Date Calculations (Phnom Penh Context)
   // Get current time in Phnom Penh regardless of server location
-  const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" }));
-  
-  const currentDay = now.getDay(); 
+  const now = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" })
+  );
+
+  const currentDay = now.getDay();
   // Logic to find the Monday of the current week
   const diff = now.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
-  
+
   const startOfWeek = new Date(now);
   startOfWeek.setDate(diff);
   startOfWeek.setHours(0, 0, 0, 0);
@@ -55,14 +57,39 @@ export async function GET() {
   // Helper to get YYYY-MM-DD without UTC conversion shifting the day
   const toLocalDateString = (date: Date) => date.toLocaleDateString("en-CA");
 
+  const formatTime = (value: string | null) => {
+    if (!value) return null;
+
+    return new Date(value).toLocaleTimeString("en-US", {
+      timeZone: "Asia/Phnom_Penh",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
   // 3. Weekly Attendance Logs
   const { data: weeklyLogs } = await supabase
     .from("attendance_log")
     .select(
-      "attendance_date, check_in_time, check_out_time, worked_minutes, attendance_status"
+      `
+    id,
+    attendance_date,
+    worked_minutes,
+    check_in_time,
+    check_out_time,
+    attendance_status,
+    attendance_sessions (
+      id,
+      check_in,
+      check_out,
+      session_minutes
+    )
+  `
     )
     .eq("employee_id", employee.id)
-    .gte("attendance_date", toLocalDateString(startOfWeek));
+    .gte("attendance_date", toLocalDateString(startOfWeek))
+    .order("attendance_date", { ascending: true });
 
   // 4. Monthly Summary Data
   const { data: monthlyLogs } = await supabase
@@ -88,7 +115,7 @@ export async function GET() {
 
   // 6. Upcoming Leave (Next 7 Days)
   const nextWeek = new Date();
-  nextWeek.setDate(now.getDate() + 14 );
+  nextWeek.setDate(now.getDate() + 14);
   const { data: upcomingLeave } = await supabase
     .from("employee_requests")
     .select("id, request_type, start_date, end_date")
@@ -107,32 +134,48 @@ export async function GET() {
       position: employee.positions?.name || "N/A",
     },
     weeklyLogs:
-      weeklyLogs?.map((log) => ({
-        date: log.attendance_date,
-        check_in_time: log.check_in_time
-          ? new Date(log.check_in_time).toLocaleTimeString("en-US", {
-              timeZone: "Asia/Phnom_Penh",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            })
-          : null,
-        check_out_time: log.check_out_time
-          ? new Date(log.check_out_time).toLocaleTimeString("en-US", {
-              timeZone: "Asia/Phnom_Penh",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            })
-          : null,
-        total_hours: log.worked_minutes
-          ? (log.worked_minutes / 60).toFixed(1)
-          : "0",
-      })) || [],
+      weeklyLogs?.map((log: any) => {
+        const sessions = [...(log.attendance_sessions || [])].sort(
+          (a: any, b: any) =>
+            new Date(b.check_in).getTime() - new Date(a.check_in).getTime()
+        );
+
+        const mostRecentSession = sessions[0] || null;
+
+        return {
+          id: log.id,
+          date: log.attendance_date,
+          first_check_in: log.check_in_time
+            ? formatTime(log.check_in_time)
+            : null,
+          last_check_out: log.check_out_time
+            ? formatTime(log.check_out_time)
+            : null,
+          check_in_time: mostRecentSession?.check_in
+            ? formatTime(mostRecentSession.check_in)
+            : null,
+          check_out_time: mostRecentSession?.check_out
+            ? formatTime(mostRecentSession.check_out)
+            : null,
+          total_hours: log.worked_minutes
+            ? (log.worked_minutes / 60).toFixed(1)
+            : "0",
+          worked_minutes: log.worked_minutes || 0,
+          attendance_status: log.attendance_status,
+          attendance_sessions: sessions.map((session: any) => ({
+            id: session.id,
+            check_in: session.check_in,
+            check_out: session.check_out,
+            session_minutes: session.session_minutes || 0,
+          })),
+        };
+      }) || [],
     summary: {
       present:
-        monthlyLogs?.filter((l) => l.attendance_status === "Present" || l.attendance_status === "Late").length ||
-        0,
+        monthlyLogs?.filter(
+          (l) =>
+            l.attendance_status === "Present" || l.attendance_status === "Late"
+        ).length || 0,
       leave:
         approvedRequests?.filter((r) => r.request_type === "leave").length || 0,
       remote:

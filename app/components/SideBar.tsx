@@ -3,14 +3,19 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@iconify/react";
-// import { logOut } from "@/actions/auth";
+import { logout as signOut } from "../lib/actions/auth";
 
 export default function SideBar({
   children,
   user,
 }: {
   children: React.ReactNode;
-  user?: { fullname: string | null; role: string | null; email: string | null };
+  user?: {
+    fullname: string | null;
+    role: string | null;
+    email: string | null;
+    pfp_url: string | null;
+  };
 }) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -114,25 +119,15 @@ export default function SideBar({
 
   const menuItems = isAdmin ? adminItems : employeeItems;
 
-  const logOut = async () => {
+  const handleLogOut = async () => {
+    setIsLoggingOut(true);
     try {
-      // 1. Call your custom Logout API to clear cookies on the server
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-      });
+      await signOut();
 
-      if (response.ok) {
-        // 2. Clear any local storage if you're using it for UI states
-        localStorage.clear();
-
-        // 3. Force a full redirect to the login page
-        // Use window.location.href to ensure the Middleware re-evaluates the empty session
-        window.location.href = "/login";
-      } else {
-        console.error("Logout failed");
-      }
+      localStorage.clear();
     } catch (error) {
-      console.error("An error occurred during logout:", error);
+      console.error("Logout error:", error);
+      setIsLoggingOut(false);
     }
   };
 
@@ -213,34 +208,48 @@ export default function SideBar({
           </ul>
 
           <div className="p-4 border-t border-base-300 bg-white">
-            <div className="flex items-center gap-3 p-2 rounded-lg bg-base-200">
-              <div className="avatar placeholder flex items-center">
-                <div className="bg-primary text-primary-content flex items-center justify-center rounded-full w-10 h-10">
-                  <span className="text-xs">
-                    {user?.fullname
-                      ? user.fullname
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()
-                          .slice(0, 2)
-                      : "U"}
-                  </span>
-                </div>
+            <div className="flex items-center gap-3 p-2 rounded-lg bg-base-200 min-w-0">
+              <div className="avatar flex items-center shrink-0">
+                {user?.pfp_url ? (
+                  <div className="w-10 h-10 rounded-full overflow-hidden">
+                    <img
+                      src={user.pfp_url}
+                      alt={user?.fullname || "User profile"}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-primary text-primary-content flex items-center justify-center rounded-full w-10 h-10">
+                    <span className="text-xs">
+                      {user?.fullname
+                        ? user.fullname
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                            .slice(0, 2)
+                        : "U"}
+                    </span>
+                  </div>
+                )}
               </div>
-              <div className="text-sm">
-                <p className="font-bold">{user?.fullname || "Guest User"}</p>
-                <p className="text-xs opacity-50">
+
+              <div className="text-sm min-w-0 flex-1">
+                <p className="font-bold truncate">
+                  {user?.fullname || "Guest User"}
+                </p>
+                <p
+                  className="text-xs opacity-50 truncate"
+                  title={user?.email || "No Email"}
+                >
                   {user?.email || "No Email"}
                 </p>
               </div>
             </div>
+
             <button
               className="btn btn-ghost btn-md w-full mt-2 text-error justify-start"
-              onClick={() => {
-                setIsLoggingOut(true);
-                logOut();
-              }}
+              onClick={handleLogOut}
               disabled={isLoggingOut}
             >
               {isLoggingOut ? (

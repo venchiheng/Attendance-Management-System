@@ -1,31 +1,45 @@
 "use client";
-import { useEffect, useState } from "react";
-import InfoTable from "@/app/components/InfoTable";
+
+import { Fragment, useEffect, useState } from "react";
 import SearchBar from "@/app/components/SearchBar";
 import DateInput from "@/app/components/DateInput";
 import Selector from "@/app/components/Selector";
 import AttendanceSummary from "@/app/components/AttendanceSummary";
 import { Icon } from "@iconify/react";
 
-const columns = [
-  { label: "Employee", key: "employee" },
-  { label: "Date", key: "date" },
-  { label: "Check In", key: "checkIn" },
-  { label: "Check Out", key: "checkOut" },
-  { label: "Work Hours", key: "workHours" },
-  { label: "Status", key: "status" },
-];
+type SessionItem = {
+  id: string;
+  tapNumber: number;
+  checkIn: string;
+  checkOut: string;
+  duration: string;
+  rawCheckIn: string | null;
+  rawCheckOut: string | null;
+  rawMinutes: number;
+};
+
+type AttendanceLog = {
+  id: string;
+  employee: string;
+  date: string;
+  checkIn: string;
+  checkOut: string;
+  workHours: string;
+  status: string;
+  tapCount: number;
+  sessions: SessionItem[];
+};
 
 export default function AttendancePage() {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<AttendanceLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedLogs, setExpandedLogs] = useState<Record<string, boolean>>({});
   const [filterDate, setFilterDate] = useState(
     new Date().toISOString().split("T")[0]
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
 
-  // 1. Same fetch pattern as your employee page
   const fetchLogs = async () => {
     setLoading(true);
     try {
@@ -43,23 +57,25 @@ export default function AttendancePage() {
     fetchLogs();
   }, []);
 
-  // 2. Same derived filtering pattern as your employee page
-  const filteredLogs = logs.filter((log: any) => {
-    // 1. Search Query Match
+  const toggleExpand = (logId: string) => {
+    setExpandedLogs((prev) => ({
+      ...prev,
+      [logId]: !prev[logId],
+    }));
+  };
+
+  const filteredLogs = logs.filter((log) => {
     const matchesSearch = log.employee
       ?.toLowerCase()
       .includes(searchQuery.toLowerCase());
 
-    // 2. Status Match
     const matchesStatus = filterStatus === "all" || log.status === filterStatus;
 
-    // 3. Date Match (Ensures log.date matches our picker)
     const matchesDate = !filterDate || log.date === filterDate;
 
     return matchesSearch && matchesStatus && matchesDate;
   });
 
-  // 3. Summaries based on the filtered data
   const totalPresent = filteredLogs.filter(
     (l) => l.status === "Present"
   ).length;
@@ -69,9 +85,28 @@ export default function AttendancePage() {
   const handleExportCSV = () => {
     if (!filteredLogs.length) return;
 
-    const csvHeaders = columns.map((col) => col.label).join(",");
-    const csvRows = filteredLogs.map((row: any) =>
-      columns.map((col) => `"${row[col.key] ?? ""}"`).join(",")
+    const csvHeaders = [
+      "Employee",
+      "Date",
+      "Check In",
+      "Check Out",
+      "Work Hours",
+      "Status",
+      "Tap Count",
+    ].join(",");
+
+    const csvRows = filteredLogs.map((row) =>
+      [
+        row.employee,
+        row.date,
+        row.checkIn,
+        row.checkOut,
+        row.workHours,
+        row.status,
+        row.tapCount,
+      ]
+        .map((value) => `"${value ?? ""}"`)
+        .join(",")
     );
 
     const csvString = [csvHeaders, ...csvRows].join("\n");
@@ -88,9 +123,25 @@ export default function AttendancePage() {
     document.body.removeChild(link);
   };
 
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case "Present":
+        return "bg-green-100 text-green-700";
+      case "Late":
+        return "bg-orange-100 text-orange-700";
+      case "Absent":
+        return "bg-red-100 text-red-700";
+      case "On leave":
+        return "bg-purple-100 text-purple-700";
+      case "Remote":
+        return "bg-blue-100 text-blue-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
-      {/* Search and Filters Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="md:flex md:flex-row grid grid-cols-2 w-full gap-4">
           <SearchBar
@@ -111,7 +162,7 @@ export default function AttendancePage() {
               { label: "Remote", value: "Remote" },
             ]}
           />
-          
+
           <DateInput
             value={filterDate}
             onChange={(val) => setFilterDate(val)}
@@ -130,7 +181,6 @@ export default function AttendancePage() {
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <AttendanceSummary
           title="Total Records"
@@ -154,11 +204,148 @@ export default function AttendancePage() {
         />
       </div>
 
-      <InfoTable
-        title="Attendance Logs"
-        columns={columns}
-        rows={filteredLogs}
-      />
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Attendance Logs
+          </h2>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="table w-full">
+            <thead className="bg-gray-50 text-gray-600 text-sm">
+              <tr>
+                <th>Employee</th>
+                <th>Date</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Work Hours</th>
+                <th>Status</th>
+                <th>Total Taps</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredLogs.length === 0 && !loading ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-8 text-gray-500">
+                    No attendance logs found.
+                  </td>
+                </tr>
+              ) : (
+                filteredLogs.map((log) => (
+                  <Fragment key={log.id}>
+                    <tr key={log.id} className="hover">
+                      <td className="font-medium text-gray-800">
+                        {log.employee}
+                      </td>
+                      <td>{log.date}</td>
+                      <td>{log.checkIn}</td>
+                      <td>{log.checkOut}</td>
+                      <td>{log.workHours}</td>
+                      <td>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(
+                            log.status
+                          )}`}
+                        >
+                          {log.status}
+                        </span>
+                      </td>
+                      <td>{log.tapCount}</td>
+                      <td>
+                        <button
+                          onClick={() => toggleExpand(log.id)}
+                          className="rounded-full w-fit flex flex-row px-3 py-1 gap-2 items-center bg-black text-white hover:bg-gray-800 border-none"
+                        >
+                          <Icon
+                            icon={
+                              expandedLogs[log.id]
+                                ? "mdi:chevron-up"
+                                : "mdi:chevron-down"
+                            }
+                            className="w-4 h-4"
+                          />
+                          {expandedLogs[log.id] ? "Hide Log" : "Expand Log"}
+                        </button>
+                      </td>
+                    </tr>
+
+                    {expandedLogs[log.id] && (
+                      <tr>
+                        <td colSpan={8} className="bg-gray-50 px-6 py-4">
+                          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+                            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                              <div>
+                                <h3 className="font-semibold text-gray-800">
+                                  Log Details
+                                </h3>
+                                <p className="text-sm text-gray-500">
+                                  {log.employee} • {log.date}
+                                </p>
+                              </div>
+                              <span className="text-sm text-gray-500">
+                                {log.sessions.length} session(s)
+                              </span>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                              <table className="table w-full">
+                                <thead className="bg-gray-50 text-xs text-gray-500">
+                                  <tr>
+                                    <th>#</th>
+                                    <th>Check In Tap</th>
+                                    <th>Check Out Tap</th>
+                                    <th>Session Duration</th>
+                                    <th>State</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {log.sessions.length === 0 ? (
+                                    <tr>
+                                      <td
+                                        colSpan={5}
+                                        className="text-center py-4 text-gray-500"
+                                      >
+                                        No session details found.
+                                      </td>
+                                    </tr>
+                                  ) : (
+                                    log.sessions.map((session) => (
+                                      <tr key={session.id}>
+                                        <td>{session.tapNumber}</td>
+                                        <td>{session.checkIn}</td>
+                                        <td>{session.checkOut}</td>
+                                        <td>{session.duration}</td>
+                                        <td>
+                                          {session.rawCheckOut ? (
+                                            <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                                              Closed
+                                            </span>
+                                          ) : (
+                                            <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-700">
+                                              Open
+                                            </span>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {loading && <div className="text-center py-4">Refreshing logs...</div>}
     </div>

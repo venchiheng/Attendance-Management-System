@@ -1,63 +1,57 @@
 "use client";
+
 import { useState } from "react";
-import { createClient } from "@/app/lib/supabase/client";
+import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
+import { login as loginAction } from "@/app/lib/actions/auth";
 
 export default function LoginPage() {
-  const supabase = createClient();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  interface LoginResponse {
-    user: {
-      role: string;
-      [key: string]: any;
-    };
-    [key: string]: any;
-  }
-
-  interface LoginError {
-    error: string;
-    [key: string]: any;
-  }
-
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
+    const formData = new FormData();
+    formData.append("email", email);
+    formData.append("password", password);
+
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-        headers: { "Content-Type": "application/json" },
-      });
+      const result = await loginAction(formData);
 
-      const result = await response.json();
-
-      if (response.ok) {
-        if (result.user.role === "admin") {
-          window.location.href = "/dashboard";
-        } else {
-          window.location.href = "/my-attendance";
-        }
-      } else {
-        setError(result.error || "Invalid email or password.");
+      if (result?.error) {
+        setError(result.error);
         setLoading(false);
+        return;
       }
-    } catch (err) {
-      setError("A connection error occurred. Please try again.");
-    } finally {
+
+      if (result?.success) {
+        if (result.role === "admin") {
+          router.push("/dashboard");
+        } else {
+          router.push("/my-dashboard");
+        }
+        router.refresh();
+      }
+    } catch {
+      setError("An unexpected error occurred.");
       setLoading(false);
     }
   };
 
+  const handleForgotPassword = () => {
+    router.push("/forgot-password");
+    router.refresh();
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-r from-[#1a3088] to-[#091a52] text-white font-sans p-4">
-      {/* 1. TOP LOADING BAR (Visible only when loading) */}
       <div className="fixed top-0 left-0 w-full h-1 z-50">
         {loading && (
           <progress className="progress progress-primary w-full h-1 rounded-none"></progress>
@@ -65,10 +59,12 @@ export default function LoginPage() {
       </div>
 
       <div className="flex flex-col items-center mb-8 text-center">
-        <img src="/newwave_logo_white.png" className="h-42" alt="logo" />
-        <p className="text-white text-lg mt-1">
-          Attendance Management System
-        </p>
+        <img
+          src="/newwave_logo_white.png"
+          alt="logo"
+          className="sm:h-20 md:h-24 lg:h-36 xl:h-42 w-auto object-contain"
+        />{" "}
+        <p className="text-white text-lg mt-1">Attendance Management System</p>
       </div>
 
       <div className="bg-white rounded-3xl p-10 w-full max-w-md shadow-2xl">
@@ -82,12 +78,12 @@ export default function LoginPage() {
             <input
               type="email"
               placeholder="Enter your email"
-              // 2. ERROR STYLING: Add red border if error exists
               className={`input input-bordered w-full rounded-xl bg-white text-gray-800 transition-all ${
                 error
                   ? "border-red-500 focus:outline-red-500 bg-red-50"
                   : "border-gray-300 focus:outline-blue-500"
               }`}
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
@@ -106,6 +102,7 @@ export default function LoginPage() {
                     ? "border-red-500 focus:outline-red-500 bg-red-50"
                     : "border-gray-300 focus:outline-blue-500"
                 }`}
+                value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
@@ -115,14 +112,25 @@ export default function LoginPage() {
                 onClick={() => setShowPassword(!showPassword)}
               >
                 <Icon
-                  icon={showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"}
+                  icon={
+                    showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"
+                  }
                   className="w-5 h-5"
                 />
               </button>
             </div>
           </div>
 
-          {/* 3. VALIDATION ERROR BOX (Matches your image example) */}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              Forgot password?
+            </button>
+          </div>
+
           {error && (
             <div className="flex items-center gap-2 text-red-500 text-sm mt-1 animate-in fade-in slide-in-from-top-1">
               <Icon icon="material-symbols:error-outline" className="w-4 h-4" />

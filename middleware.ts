@@ -39,21 +39,28 @@ export async function middleware(request: NextRequest) {
   const role =
     user?.app_metadata?.role || user?.user_metadata?.role || "employee";
 
-  const isAuthPage = url.pathname === "/login" || url.pathname === "/auth";
-  const isSetupPage = url.pathname === "/setup-password";
+  const publicRoutes = [
+    "/login",
+    "/auth",
+    "/forgot-password",
+    "/setup-password",
+    "/update-password",
+  ];
+
+  const isPublicRoute = publicRoutes.includes(url.pathname);
   const isPublicApi = url.pathname.startsWith("/api/auth");
   const isInvite = url.searchParams.get("type") === "invite";
 
   if (isPublicApi) return response;
 
   if (!user) {
-    if (isAuthPage || isSetupPage || isInvite) {
+    if (isPublicRoute || isInvite) {
       return response;
     }
     return NextResponse.redirect(new URL("/login", request.url));
   }
-
-  if (isAuthPage && !isInvite) {
+  
+  if ((url.pathname === "/login" || url.pathname === "/auth") && !isInvite) {
     const dest = role === "admin" ? "/dashboard" : "/my-dashboard";
     return NextResponse.redirect(new URL(dest, request.url));
   }

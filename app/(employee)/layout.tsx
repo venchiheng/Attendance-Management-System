@@ -14,7 +14,7 @@ export default async function EmployeeLayout({ children }: { children: React.Rea
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("fullname, role, email")
+    .select("fullname, role, email, pfp_url")
     .eq("id", user.id)
     .single();
 
