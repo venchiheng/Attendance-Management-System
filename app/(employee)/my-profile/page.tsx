@@ -1,15 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { Icon } from "@iconify/react";
 import { updatePassword } from "@/app/lib/actions/auth";
-import { handleForgotPasswordN8N as requestPasswordReset } from "@/app/lib/actions/auth";
 
 export default function MyProfilePage() {
+  const router = useRouter();
   const [employee, setEmployee] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Password States
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -18,6 +18,10 @@ export default function MyProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+
+  const handleForgotPassword = () => {
+    router.push("/forgot-password");
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -321,10 +325,7 @@ export default function MyProfilePage() {
                 <button
                   type="button"
                   className="text-blue-600 text-sm font-semibold hover:underline w-fit"
-                  onClick={async () => {
-                    const res = await requestPasswordReset(employee.email);
-                    if (res.success) alert("Reset link sent to your email!");
-                  }}
+                  onClick={handleForgotPassword}
                 >
                   Forgot password?
                 </button>
