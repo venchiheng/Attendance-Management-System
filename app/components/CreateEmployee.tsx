@@ -120,7 +120,20 @@ export default function CreateEmployee({
       const result = await response.json();
 
       if (response.ok) {
-        alert("Access link sent successfully.");
+        if (!isEdit) {
+          // CREATE mode
+          if (result.email_sent) {
+            alert("Employee created and access link sent successfully.");
+          } else {
+            alert(
+              "Employee created, but failed to send access link. You can resend it later."
+            );
+          }
+        } else {
+          // EDIT mode
+          alert("Employee updated successfully.");
+        }
+
         onSuccess();
         onClose();
       } else {
