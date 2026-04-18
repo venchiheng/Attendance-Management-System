@@ -45,6 +45,8 @@ export async function middleware(request: NextRequest) {
     "/forgot-password",
     "/setup-password",
     "/update-password",
+    "/oops-unauthorized",
+    "/oops-unauthenticated",
   ];
 
   const isPublicRoute = publicRoutes.includes(url.pathname);
@@ -59,10 +61,32 @@ export async function middleware(request: NextRequest) {
     }
     return NextResponse.redirect(new URL("/login", request.url));
   }
-  
+
   if ((url.pathname === "/login" || url.pathname === "/auth") && !isInvite) {
     const dest = role === "admin" ? "/dashboard" : "/my-dashboard";
     return NextResponse.redirect(new URL(dest, request.url));
+  }
+
+  // Only enforce employee active-status check for non-admins
+  if (role !== "admin") {
+    const { data: employee, error: employeeError } = await supabase
+      .from("employees")
+      .select("id, user_id, employment_status")
+      .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+      .maybeSingle();
+
+    // If no employee row found, sign out and block access
+    if (employeeError || !employee) {
+      await supabase.auth.signOut();
+
+      return NextResponse.redirect(new URL("/oops-unauthenticated", request.url));
+    }
+
+    if (employee.employment_status === "inactive") {
+      await supabase.auth.signOut();
+
+      return NextResponse.redirect(new URL("/oops-unauthenticated", request.url));
+    }
   }
 
   const adminRoutes = [

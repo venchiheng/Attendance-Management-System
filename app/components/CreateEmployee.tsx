@@ -28,7 +28,8 @@ export default function CreateEmployee({
   mode = "add",
 }: Props) {
   const [formData, setFormData] = useState<any>({});
-  const [loading, setLoading] = useState(false); // Added loading state
+  const [loading, setLoading] = useState(false);
+  const [sendingAccessLink, setSendingAccessLink] = useState(false);
   // const isEdit = !!initialData?.id;
   const isEdit = mode === "edit";
   const isView = mode === "view";
@@ -119,6 +120,7 @@ export default function CreateEmployee({
       const result = await response.json();
 
       if (response.ok) {
+        alert("Access link sent successfully.");
         onSuccess();
         onClose();
       } else {
@@ -129,6 +131,55 @@ export default function CreateEmployee({
       alert("Failed to connect to the server.");
     } finally {
       setLoading(false);
+    }
+  };
+  const handleSendAccessLink = async () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!formData.id) {
+      alert("Employee ID is missing.");
+      return;
+    }
+
+    if (!formData.email || formData.email.toString().trim() === "") {
+      alert("Email Address is required.");
+      return;
+    }
+
+    if (!emailRegex.test(formData.email)) {
+      alert("Please enter a valid email address.");
+      return;
+    }
+
+    const confirmed = window.confirm(`Send access link to ${formData.email}?`);
+
+    if (!confirmed) return;
+
+    setSendingAccessLink(true);
+
+    try {
+      const response = await fetch("/api/employees", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          send_access_link: true,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert("Access link sent successfully.");
+        onSuccess();
+      } else {
+        alert(result.error || "Failed to send access link.");
+      }
+    } catch (error) {
+      console.error("Send access link error:", error);
+      alert("Failed to connect to the server.");
+    } finally {
+      setSendingAccessLink(false);
     }
   };
 
@@ -180,22 +231,7 @@ export default function CreateEmployee({
               </div>
             </div>
           )}
-          <div>
-            <RequiredLabel>Email Address</RequiredLabel>
-            {isView ? (
-              <div className="py-2 text-black font-medium">
-                {formData.email || "---"}
-              </div>
-            ) : (
-              <input
-                name="email"
-                value={formData.email || ""}
-                onChange={handleChange}
-                readOnly={isView}
-                className={inputClass()}
-              />
-            )}
-          </div>
+
           <div>
             <RequiredLabel>Phone Number</RequiredLabel>
             {isView ? (
@@ -206,6 +242,22 @@ export default function CreateEmployee({
               <input
                 name="phone_number"
                 value={formData.phone_number || ""}
+                onChange={handleChange}
+                readOnly={isView}
+                className={inputClass()}
+              />
+            )}
+          </div>
+          <div className="col-span-2">
+            <RequiredLabel>Email Address</RequiredLabel>
+            {isView ? (
+              <div className="py-2 text-black font-medium">
+                {formData.email || "---"}
+              </div>
+            ) : (
+              <input
+                name="email"
+                value={formData.email || ""}
                 onChange={handleChange}
                 readOnly={isView}
                 className={inputClass()}
@@ -391,25 +443,42 @@ export default function CreateEmployee({
           </div>
         )}
 
-        <div className="modal-action mt-8">
+        <div className="modal-action mt-8 flex justify-between w-full">
           <button className="btn btn-ghost" onClick={onClose}>
             {isView ? "Close" : "Cancel"}
           </button>
 
           {!isView && (
-            <button
-              className="btn bg-[#1A77F2] hover:bg-blue-700 text-white border-none"
-              onClick={handleSave}
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="loading loading-spinner"></span>
-              ) : isEdit ? (
-                "Update"
-              ) : (
-                "Send Invitation"
+            <div className="flex gap-2">
+              {isEdit && (
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={handleSendAccessLink}
+                  disabled={sendingAccessLink || loading || !formData.email}
+                >
+                  {sendingAccessLink ? (
+                    <span className="loading loading-spinner"></span>
+                  ) : (
+                    "Send Access Link"
+                  )}
+                </button>
               )}
-            </button>
+
+              <button
+                className="btn bg-[#1A77F2] hover:bg-blue-700 text-white border-none"
+                onClick={handleSave}
+                disabled={loading || sendingAccessLink}
+              >
+                {loading ? (
+                  <span className="loading loading-spinner"></span>
+                ) : isEdit ? (
+                  "Update"
+                ) : (
+                  "Send Invitation"
+                )}
+              </button>
+            </div>
           )}
         </div>
       </div>
