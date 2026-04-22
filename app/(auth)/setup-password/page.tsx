@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/app/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { Icon } from "@iconify/react";
 
 export default function SetupPassword() {
   const [password, setPassword] = useState("");
@@ -10,6 +11,8 @@ export default function SetupPassword() {
   const [isVerifying, setIsVerifying] = useState(true); // Loading state for the link
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const router = useRouter();
   const supabase = createClient();
@@ -126,26 +129,50 @@ export default function SetupPassword() {
         <form onSubmit={handleUpdatePassword} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-gray-600 uppercase">New Password</label>
-            <input
-              type="password"
-              className="input input-bordered w-full mt-1 focus:border-[#1A77F2]"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="input input-bordered w-full mt-1 focus:border-[#1A77F2] pr-12"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                <Icon
+                  icon={showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"}
+                  className="w-5 h-5"
+                />
+              </button>
+            </div>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-gray-600 uppercase">Confirm Password</label>
-            <input
-              type="password"
-              className="input input-bordered w-full mt-1 focus:border-[#1A77F2]"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                className="input input-bordered w-full mt-1 focus:border-[#1A77F2] pr-12"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                <Icon
+                  icon={showConfirmPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"}
+                  className="w-5 h-5"
+                />
+              </button>
+            </div>
           </div>
 
           {error && (
