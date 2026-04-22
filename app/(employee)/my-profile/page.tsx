@@ -13,6 +13,9 @@ export default function MyProfilePage() {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -282,13 +285,29 @@ export default function MyProfilePage() {
                       Old Password
                     </span>
                   </label>
-                  <input
-                    type="password"
-                    className="input input-bordered w-full rounded-xl bg-gray-50 border-gray-200 focus:outline-blue-500"
-                    placeholder="••••••••"
-                    value={oldPassword}
-                    onChange={(e) => setOldPassword(e.target.value)}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showOldPassword ? "text" : "password"}
+                      className="input input-bordered w-full rounded-xl bg-gray-50 border-gray-200 focus:outline-blue-500 pr-12"
+                      placeholder="••••••••"
+                      value={oldPassword}
+                      onChange={(e) => setOldPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      onClick={() => setShowOldPassword(!showOldPassword)}
+                    >
+                      <Icon
+                        icon={
+                          showOldPassword
+                            ? "mdi:eye-off-outline"
+                            : "mdi:eye-outline"
+                        }
+                        className="w-5 h-5"
+                      />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -298,13 +317,29 @@ export default function MyProfilePage() {
                         New Password
                       </span>
                     </label>
-                    <input
-                      type="password"
-                      className="input input-bordered w-full rounded-xl bg-gray-50 border-gray-200 focus:outline-blue-500"
-                      placeholder="••••••••"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                    />
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        className="input input-bordered w-full rounded-xl bg-gray-50 border-gray-200 focus:outline-blue-500 pr-12"
+                        placeholder="••••••••"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                      >
+                        <Icon
+                          icon={
+                            showNewPassword
+                              ? "mdi:eye-off-outline"
+                              : "mdi:eye-outline"
+                          }
+                          className="w-5 h-5"
+                        />
+                      </button>
+                    </div>
                   </div>
                   <div className="form-control">
                     <label className="label pt-0">
@@ -312,13 +347,31 @@ export default function MyProfilePage() {
                         Confirm Password
                       </span>
                     </label>
-                    <input
-                      type="password"
-                      className="input input-bordered w-full rounded-xl bg-gray-50 border-gray-200 focus:outline-blue-500"
-                      placeholder="••••••••"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        className="input input-bordered w-full rounded-xl bg-gray-50 border-gray-200 focus:outline-blue-500 pr-12"
+                        placeholder="••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                      >
+                        <Icon
+                          icon={
+                            showConfirmPassword
+                              ? "mdi:eye-off-outline"
+                              : "mdi:eye-outline"
+                          }
+                          className="w-5 h-5"
+                        />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -339,6 +392,9 @@ export default function MyProfilePage() {
                     setIsEditing(false);
                     setImagePreview(null);
                     setSelectedFile(null);
+                    setShowOldPassword(false);
+                    setShowNewPassword(false);
+                    setShowConfirmPassword(false);
                   }}
                   className="flex-1 btn btn-ghost rounded-2xl border-gray-200"
                 >
