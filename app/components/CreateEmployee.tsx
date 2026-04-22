@@ -122,7 +122,7 @@ export default function CreateEmployee({
       if (response.ok) {
         if (!isEdit) {
           // CREATE mode
-          if (result.email_sent) {
+          if (response.ok) {
             alert("Employee created and access link sent successfully.");
           } else {
             alert(
