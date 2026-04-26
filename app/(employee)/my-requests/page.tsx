@@ -6,6 +6,7 @@ import Selector from "@/app/components/Selector";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import EmployeeRequestCard from "@/app/components/EmployeeRequestCard";
+import { createClient } from "@/app/lib/supabase/client";
 
 type RequestData = {
   title: string;
@@ -28,6 +29,7 @@ export default function MyRequestsPage() {
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const router = useRouter();
+  const supabase = createClient();
 
   const fetchRequests = async () => {
     try {
@@ -45,8 +47,25 @@ export default function MyRequestsPage() {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
 
+    // 2. Real-time for Requests
+    const channel = supabase
+      .channel("my-requests-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "employee_requests" },
+        () => fetchRequests()
+      )
+      .subscribe((status) => {
+        if (status === "CLOSED" || status === "CHANNEL_ERROR") {
+          supabase.realtime.connect();
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
   const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
       const matchesSearch = 

@@ -6,6 +6,7 @@ import DateInput from "@/app/components/DateInput";
 import Selector from "@/app/components/Selector";
 import AttendanceSummary from "@/app/components/AttendanceSummary";
 import { Icon } from "@iconify/react";
+import { createClient } from "@/app/lib/supabase/client";
 
 type SessionItem = {
   id: string;
@@ -40,8 +41,10 @@ export default function AttendancePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
 
-  const fetchLogs = async () => {
-    setLoading(true);
+  const supabase = createClient();
+
+  const fetchLogs = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const res = await fetch("/api/attendance_log");
       const data = await res.json();
@@ -54,7 +57,27 @@ export default function AttendancePage() {
   };
 
   useEffect(() => {
-    fetchLogs();
+    // Initial Fetch
+    fetchLogs(true);
+
+    // 2. Real-time Subscription
+    const channel = supabase
+      .channel("admin-attendance-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "attendance_log" },
+        () => fetchLogs(false) // Re-fetch silently (no loading spinner)
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "attendance_sessions" },
+        () => fetchLogs(false)
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const toggleExpand = (logId: string) => {

@@ -1,5 +1,6 @@
 "use client";
 import RequestCard from "@/app/components/requests/RequestCard";
+import { createClient } from "@/app/lib/supabase/client";
 import { useEffect, useState } from "react";
 
 // Define the RequestData type according to your API response structure
@@ -21,6 +22,7 @@ export default function RequestsPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("All");
   const [mounted, setMounted] = useState(false);
+  const supabase = createClient();
 
   const fetchRequests = async () => {
     try {
@@ -37,6 +39,19 @@ export default function RequestsPage() {
   useEffect(() => {
     setMounted(true);
     fetchRequests();
+
+    const channel = supabase
+      .channel("requests-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "employee_requests" },
+        () => fetchRequests()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const filteredRequests = requests.filter((req) => {
@@ -65,7 +80,7 @@ export default function RequestsPage() {
       value: "Rejected",
     },
   ];
-  
+
   if (!mounted) {
     return <div className="bg-base-200/30 min-h-screen" />;
   }

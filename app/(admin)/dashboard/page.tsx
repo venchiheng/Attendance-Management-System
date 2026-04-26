@@ -2,13 +2,15 @@
 import { useEffect, useState } from "react";
 import DashboardSummary from "@/app/components/DashboardSummary";
 import InfoTable from "@/app/components/InfoTable";
+import { createClient } from "@/app/lib/supabase/client";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
     totalEmployees: 0,
     checkedIn: 0,
-    checkedOut: 0,
-    totalLate: 0,
+    totalRemote: 0,
+    totalLeave: 0,
+    totalAbsent: 0,
   });
   const [loading, setLoading] = useState(true);
   type Request = {
@@ -21,6 +23,7 @@ export default function DashboardPage() {
   };
 
   const [requests, setRequests] = useState<Request[]>([]);
+  const supabase = createClient();
 
   const fetchSummary = async () => {
     try {
@@ -73,14 +76,35 @@ export default function DashboardPage() {
       console.error("REST Update Error:", err);
     }
   };
-  
+
   useEffect(() => {
     const loadAllData = async () => {
-      setLoading(true);
       await Promise.all([fetchSummary(), fetchRequests()]);
-      setLoading(false);
     };
     loadAllData();
+
+    const channel = supabase
+      .channel("admin-dashboard-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "attendance_log" },
+        () => loadAllData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "attendance_sessions" },
+        () => loadAllData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "employee_requests" },
+        () => loadAllData()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   if (loading)
@@ -100,22 +124,28 @@ export default function DashboardPage() {
           variant="blue"
         />
         <DashboardSummary
-          icon="mi:user-check"
+          icon="tabler:user-check"
           title="Total Checked In"
           value={stats.checkedIn}
           variant="green"
         />
         <DashboardSummary
-          icon="tabler:user-bolt"
-          title="Total Check Out"
-          value={stats.checkedOut}
-          variant="red"
+          icon="tabler:user-pause"
+          title="Total On Leave"
+          value={stats.totalLeave}
+          variant="orange"
         />
         <DashboardSummary
-          icon="proicons:clock"
-          title="Total Late"
-          value={stats.totalLate}
-          variant="orange"
+          icon="tabler:user-pin"
+          title="Total Remote"
+          value={stats.totalRemote}
+          variant="blue"
+        />
+        <DashboardSummary
+          icon="tabler:user-cancel"
+          title="Total Absent"
+          value={stats.totalAbsent}
+          variant="red"
         />
       </div>
       <div className="gap-4 w-full">

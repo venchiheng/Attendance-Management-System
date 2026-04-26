@@ -1,9 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { logout as signOut } from "../lib/actions/auth";
+import { createClient } from "../lib/supabase/client";
 
 export default function SideBar({
   children,
@@ -18,11 +19,37 @@ export default function SideBar({
   };
 }) {
   const pathname = usePathname();
+  const router = useRouter(); // 4. Initialize router
   const [mounted, setMounted] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const supabase = createClient();
 
   useEffect(() => {
     setMounted(true);
+
+    // 5. Real-time listener for Profile updates
+    const channel = supabase
+      .channel("sidebar-user-updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+        },
+        () => {
+          router.refresh();
+        }
+      )
+      .subscribe((status) => {
+        if (status === "CLOSED" || status === "CHANNEL_ERROR") {
+          supabase.realtime.connect();
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const getTitle = () => {
@@ -213,7 +240,11 @@ export default function SideBar({
                 {user?.pfp_url ? (
                   <div className="w-10 h-10 rounded-full overflow-hidden">
                     <img
-                      src={user.pfp_url}
+                      src={
+                        mounted && user?.pfp_url
+                          ? `${user.pfp_url}?t=${new Date().getTime()}`
+                          : user?.pfp_url || ""
+                      }
                       alt={user?.fullname || "User profile"}
                       className="w-full h-full object-cover"
                     />

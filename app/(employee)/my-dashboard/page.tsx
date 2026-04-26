@@ -1,16 +1,17 @@
 "use client";
-import React from "react";
 import { Icon } from "@iconify/react";
+import { useEffect, useState } from "react";
 import AttendanceSummary from "@/app/components/AttendanceSummary";
 import Link from "next/link";
+import { createClient } from "@/app/lib/supabase/client";
 
 type Props = {};
 
-export default function page({}: Props) {
-  const [dashboardData, setDashboardData] = React.useState<any>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [showTodaySessions, setShowTodaySessions] = React.useState(false);
-  const [expandedLogs, setExpandedLogs] = React.useState<
+export default function page() {
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showTodaySessions, setShowTodaySessions] = useState(false);
+  const [expandedLogs, setExpandedLogs] = useState<
     Record<string, boolean>
   >({});
 
@@ -21,23 +22,47 @@ export default function page({}: Props) {
     }));
   };
 
-  React.useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const response = await fetch("/api/homepage");
-        if (!response.ok) throw new Error("Failed to fetch");
+  const supabase = createClient();
 
-        const data = await response.json();
-        if (data.error) throw new Error(data.error);
+  const fetchDashboard = async (silent = false) => {
+    if (!silent) setIsLoading(true);
+    try {
+      const response = await fetch("/api/homepage");
+      if (!response.ok) throw new Error("Failed to fetch");
+      const data = await response.json();
+      setDashboardData(data);
+    } catch (error) {
+      console.error("Failed to load dashboard:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        setDashboardData(data);
-      } catch (error) {
-        console.error("Failed to load dashboard:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  useEffect(() => {
     fetchDashboard();
+
+    const channel = supabase
+      .channel('homepage-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'attendance_log' },
+        () => fetchDashboard(true) // Silent refresh
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'attendance_sessions' },
+        () => fetchDashboard(true)
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'employee_requests' },
+        () => fetchDashboard(true)
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   if (isLoading)

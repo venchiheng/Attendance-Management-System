@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { updatePassword } from "@/app/lib/actions/auth";
+import { createClient } from "@/app/lib/supabase/client";
 
 export default function MyProfilePage() {
   const router = useRouter();
@@ -21,26 +22,60 @@ export default function MyProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const supabase = createClient();
 
   const handleForgotPassword = () => {
     router.push("/forgot-password");
   };
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch("/api/employees/me");
-        if (res.ok) {
-          const data = await res.json();
-          setEmployee(data);
-        }
-      } catch (err) {
-        console.error("Error fetching profile:", err);
-      } finally {
-        setLoading(false);
+  const fetchProfile = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const res = await fetch("/api/employees/me");
+      if (res.ok) {
+        const data = await res.json();
+        setEmployee(data);
       }
-    };
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProfile();
+  }, []);
+
+  useEffect(() => {
+    if (!employee?.id) return;
+
+    const channel = supabase
+      .channel(`profile-updates-${employee.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "employees",
+          filter: `id=eq.${employee.id}`,
+        },
+        () => fetchProfile(true)
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "profiles",
+        },
+        () => fetchProfile(true)
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const handleUpload = async () => {
@@ -61,13 +96,22 @@ export default function MyProfilePage() {
 
       if (res.ok) {
         const data = await res.json();
+
+        // 1. Update the local state with a cache-busting URL
+        const newUrl = `${data.url}?t=${new Date().getTime()}`;
+
         setEmployee((prev: any) => ({
           ...prev,
-          profiles: { ...prev.profiles, pfp_url: data.url },
+          profiles: { ...prev.profiles, pfp_url: newUrl },
         }));
+
+        // 2. Clear the previews
         setSelectedFile(null);
         setImagePreview(null);
         setIsEditing(false);
+
+        // 3. Refresh the Server Components (SideBar)
+        router.refresh();
       }
     } catch (err) {
       console.error("Upload failed:", err);

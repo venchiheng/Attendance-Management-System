@@ -5,6 +5,7 @@ import ReportSummary from "@/app/components/ReportSummary";
 import AttendanceSummary from "@/app/components/AttendanceSummary";
 import InfoTable from "@/app/components/InfoTable";
 import { Icon } from "@iconify/react";
+import { createClient } from "@/app/lib/supabase/client";
 
 const columns = [
   { label: "Employee", key: "employee" },
@@ -20,23 +21,36 @@ export default function ReportsPage() {
   const [reportData, setReportData] = useState<any>(null);
   const [selectedMonth, setSelectedMonth] = useState("2026-04");
   const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
   useEffect(() => {
-    async function getStats() {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/reports?month=${selectedMonth}`);
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
-        setReportData(data);
-      } catch (err) {
-        console.error("Report Fetch Error:", err);
-      } finally {
-        setLoading(false);
-      }
+  async function getStats(silent = false) {
+    if (!silent) setLoading(true);
+    try {
+      const res = await fetch(`/api/reports?month=${selectedMonth}`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
+      setReportData(data);
+    } catch (err) {
+      console.error("Report Fetch Error:", err);
+    } finally {
+      setLoading(false);
     }
-    getStats();
-  }, [selectedMonth]);
+  }
+  
+  getStats();
+
+  const channel = supabase
+    .channel("reports-realtime")
+    // We only trigger re-fetch on log/session changes since reports are attendance-focused
+    .on("postgres_changes", { event: "*", schema: "public", table: "attendance_log" }, () => getStats(true))
+    .on("postgres_changes", { event: "*", schema: "public", table: "attendance_sessions" }, () => getStats(true))
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [selectedMonth]);
 
   // Use optional chaining (?.) so the page doesn't crash if reportData is null
   const stats = reportData?.summary || {};
@@ -107,7 +121,7 @@ export default function ReportsPage() {
         />
         <ReportSummary
           title="Total Work Hours"
-          value={(stats.totalWorkHours || 0) + "h"}
+          value={(stats.totalWorkHours || 0)}
           subtitle="Across all Employees"
           icon="mingcute:time-line"
           variant="bg-white"

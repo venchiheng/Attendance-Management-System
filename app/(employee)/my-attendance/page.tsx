@@ -5,6 +5,7 @@ import DashboardSummary from "@/app/components/DashboardSummary";
 import Selector from "@/app/components/Selector";
 import DateInput from "@/app/components/DateInput";
 import { Icon } from "@iconify/react";
+import { createClient } from "@/app/lib/supabase/client";
 
 type SessionItem = {
   id: string;
@@ -38,9 +39,10 @@ export default function MyAttendancePage() {
   );
   const [filterStatus, setFilterStatus] = useState("all");
 
+  const supabase = createClient();
+
   useEffect(() => {
     const fetchMyLogs = async () => {
-      setLoading(true);
       try {
         const res = await fetch("/api/attendance_log");
         const data = await res.json();
@@ -53,6 +55,24 @@ export default function MyAttendancePage() {
     };
 
     fetchMyLogs();
+
+    const channel = supabase
+      .channel("my-attendance-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "attendance_log" },
+        () => fetchMyLogs() // Re-fetch when logs change
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "attendance_sessions" },
+        () => fetchMyLogs() // Re-fetch when sessions change
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const toggleExpand = (logId: string) => {
