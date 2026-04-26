@@ -34,6 +34,11 @@ export default function MyProfilePage() {
       const res = await fetch("/api/employees/me");
       if (res.ok) {
         const data = await res.json();
+        
+        if (data.profiles?.pfp_url) {
+          data.profiles.pfp_url = `${data.profiles.pfp_url}?t=${new Date().getTime()}`;
+        }
+        
         setEmployee(data);
       }
     } catch (err) {
@@ -55,28 +60,20 @@ export default function MyProfilePage() {
       .on(
         "postgres_changes",
         {
-          event: "*",
-          schema: "public",
-          table: "employees",
-          filter: `id=eq.${employee.id}`,
-        },
-        () => fetchProfile(true)
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
+          event: "UPDATE", // Focus on updates
           schema: "public",
           table: "profiles",
+          // Filter specifically for this user
+          filter: `id=eq.${employee.id}`,
         },
-        () => fetchProfile(true)
+        () => fetchProfile(true) // This will now fetch with a new timestamp
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [employee?.id]);
 
   const handleUpload = async () => {
     if (!selectedFile || !employee?.id) {
